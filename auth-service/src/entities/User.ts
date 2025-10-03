@@ -6,7 +6,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { IsEmail, MinLength } from 'class-validator';
-import bcrypt from 'bcrypt';
+import * as argon2 from 'argon2';
 
 @Entity('users')
 export class User {
@@ -28,6 +28,6 @@ export class User {
   updatedAt: Date;
 
   async validatePassword(password: string): Promise<boolean> {
-    return bcrypt.compare(password, this.password);
+    return argon2.verify(this.password, password);
   }
 }

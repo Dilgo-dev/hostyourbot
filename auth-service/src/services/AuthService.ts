@@ -1,6 +1,6 @@
 import { Repository } from 'typeorm';
 import jwt from 'jsonwebtoken';
-import bcrypt from 'bcrypt';
+import * as argon2 from 'argon2';
 import { User } from '../entities/User';
 import { AppDataSource } from '../config/database';
 
@@ -24,8 +24,8 @@ export class AuthService {
         throw new Error('User already exists');
       }
 
-      console.log('[AuthService] Hashing password with bcrypt (8 rounds)');
-      const hashedPassword = await bcrypt.hash(password, 8);
+      console.log('[AuthService] Hashing password with Argon2');
+      const hashedPassword = await argon2.hash(password);
       console.log('[AuthService] Password hashed successfully');
 
       console.log('[AuthService] Creating user entity');
