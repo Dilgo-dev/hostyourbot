@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FaRocket, FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaEnvelope, FaLock, FaEye, FaEyeSlash } from 'react-icons/fa';
 
 export default function Register() {
   const [formData, setFormData] = useState({
-    username: '',
     email: '',
     password: '',
     confirmPassword: ''
@@ -16,12 +15,6 @@ export default function Register() {
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-
-    if (!formData.username.trim()) {
-      newErrors.username = "Le nom d'utilisateur est requis";
-    } else if (formData.username.length < 3) {
-      newErrors.username = "Le nom d'utilisateur doit contenir au moins 3 caractères";
-    }
 
     if (!formData.email.trim()) {
       newErrors.email = "L'email est requis";
@@ -69,10 +62,6 @@ export default function Register() {
           transition={{ duration: 0.5 }}
         >
           <div className="text-center mb-8">
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <FaRocket className="text-purple-400 text-3xl" />
-              <span className="text-white text-2xl font-bold">HostYourBot</span>
-            </div>
             <h1 className="text-3xl font-bold text-white mb-2">Créer un compte</h1>
             <p className="text-slate-400">Commencez à héberger vos bots gratuitement</p>
           </div>
@@ -85,29 +74,6 @@ export default function Register() {
             className="bg-white/5 backdrop-blur-sm p-8 rounded-xl border border-white/10"
           >
             <div className="space-y-5">
-              <div>
-                <label htmlFor="username" className="block text-sm font-medium text-slate-300 mb-2">
-                  Nom d'utilisateur
-                </label>
-                <div className="relative">
-                  <FaUser className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="text"
-                    id="username"
-                    name="username"
-                    value={formData.username}
-                    onChange={handleChange}
-                    className={`w-full bg-slate-800/50 border ${
-                      errors.username ? 'border-red-500' : 'border-white/10'
-                    } rounded-lg px-12 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors`}
-                    placeholder="johndoe"
-                  />
-                </div>
-                {errors.username && (
-                  <p className="mt-1 text-sm text-red-400">{errors.username}</p>
-                )}
-              </div>
-
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-2">
                   Email
