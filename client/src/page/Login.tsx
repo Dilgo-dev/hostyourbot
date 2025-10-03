@@ -1,15 +1,19 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
+  const navigate = useNavigate();
+  const { login, error: authError, clearError } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -28,10 +32,20 @@ export default function Login() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (validateForm()) {
-      console.log('Form submitted:', formData);
+    if (!validateForm()) return;
+
+    setIsSubmitting(true);
+    clearError();
+
+    try {
+      await login(formData.email, formData.password);
+      navigate('/');
+    } catch (err: any) {
+      console.error('Login error:', err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -63,6 +77,12 @@ export default function Login() {
             onSubmit={handleSubmit}
             className="bg-white/5 backdrop-blur-sm p-8 rounded-xl border border-white/10"
           >
+            {authError && (
+              <div className="mb-4 p-3 bg-red-500/10 border border-red-500/50 rounded-lg">
+                <p className="text-sm text-red-400">{authError}</p>
+              </div>
+            )}
+
             <div className="space-y-5">
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-2">
@@ -127,9 +147,10 @@ export default function Login() {
 
               <button
                 type="submit"
-                className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-lg font-semibold transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/50"
+                disabled={isSubmitting}
+                className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-purple-800 disabled:cursor-not-allowed text-white py-3 rounded-lg font-semibold transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/50"
               >
-                Se connecter
+                {isSubmitting ? 'Connexion en cours...' : 'Se connecter'}
               </button>
             </div>
 

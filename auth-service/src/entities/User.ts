@@ -18,10 +18,6 @@ export class User {
   @IsEmail()
   email: string;
 
-  @Column({ unique: true })
-  @MinLength(3)
-  username: string;
-
   @Column()
   @MinLength(6)
   password: string;

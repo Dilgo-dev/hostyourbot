@@ -10,9 +10,9 @@ export class AuthService {
     this.userRepository = AppDataSource.getRepository(User);
   }
 
-  async register(email: string, username: string, password: string): Promise<User> {
+  async register(email: string, password: string): Promise<User> {
     const existingUser = await this.userRepository.findOne({
-      where: [{ email }, { username }],
+      where: { email },
     });
 
     if (existingUser) {
@@ -21,7 +21,6 @@ export class AuthService {
 
     const user = this.userRepository.create({
       email,
-      username,
       password,
     });
 
