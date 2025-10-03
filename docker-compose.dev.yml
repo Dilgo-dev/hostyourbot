@@ -1,4 +1,40 @@
 services:
+  postgres-auth:
+    image: postgres:16-alpine
+    container_name: hostyourbot-postgres-auth-dev
+    environment:
+      - POSTGRES_DB=auth_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-auth-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  auth-service:
+    build:
+      context: ./auth-service
+      target: development
+    container_name: hostyourbot-auth-service-dev
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./auth-service:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - DB_HOST=postgres-auth
+      - DB_PORT=5432
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=auth_db
+      - JWT_SECRET=dev_secret_key_change_in_production
+    depends_on:
+      - postgres-auth
+    restart: unless-stopped
+
   client:
     build:
       context: ./client
@@ -14,3 +50,6 @@ services:
     stdin_open: true
     tty: true
     restart: unless-stopped
+
+volumes:
+  postgres-auth-data:
