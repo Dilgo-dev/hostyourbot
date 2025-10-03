@@ -36,6 +36,7 @@ services:
       - DB_PASSWORD=postgres
       - DB_NAME=auth_db
       - JWT_SECRET=dev_secret_key_change_in_production
+      - NODE_OPTIONS=--max-old-space-size=512
     depends_on:
       postgres-auth:
         condition: service_healthy
