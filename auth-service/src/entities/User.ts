@@ -4,10 +4,9 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  BeforeInsert,
 } from 'typeorm';
 import { IsEmail, MinLength } from 'class-validator';
-import bcrypt from 'bcrypt';
+import * as argon2 from 'argon2';
 
 @Entity('users')
 export class User {
@@ -18,12 +17,8 @@ export class User {
   @IsEmail()
   email: string;
 
-  @Column({ unique: true })
-  @MinLength(3)
-  username: string;
-
   @Column()
-  @MinLength(6)
+  @MinLength(8)
   password: string;
 
   @CreateDateColumn()
@@ -32,12 +27,7 @@ export class User {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @BeforeInsert()
-  async hashPassword() {
-    this.password = await bcrypt.hash(this.password, 10);
-  }
-
   async validatePassword(password: string): Promise<boolean> {
-    return bcrypt.compare(password, this.password);
+    return argon2.verify(this.password, password);
   }
 }

@@ -1,5 +1,6 @@
 import { Repository } from 'typeorm';
 import jwt from 'jsonwebtoken';
+import * as argon2 from 'argon2';
 import { User } from '../entities/User';
 import { AppDataSource } from '../config/database';
 
@@ -10,22 +11,43 @@ export class AuthService {
     this.userRepository = AppDataSource.getRepository(User);
   }
 
-  async register(email: string, username: string, password: string): Promise<User> {
-    const existingUser = await this.userRepository.findOne({
-      where: [{ email }, { username }],
-    });
+  async register(email: string, password: string): Promise<{ user: User; token: string }> {
+    try {
+      console.log('[AuthService] Starting registration for:', email);
 
-    if (existingUser) {
-      throw new Error('User already exists');
+      const existingUser = await this.userRepository.findOne({
+        where: { email },
+      });
+
+      if (existingUser) {
+        console.log('[AuthService] User already exists:', email);
+        throw new Error('User already exists');
+      }
+
+      console.log('[AuthService] Hashing password with Argon2');
+      const hashedPassword = await argon2.hash(password);
+      console.log('[AuthService] Password hashed successfully');
+
+      console.log('[AuthService] Creating user entity');
+      const user = this.userRepository.create({
+        email,
+        password: hashedPassword,
+      });
+
+      console.log('[AuthService] Saving user to database');
+      const savedUser = await this.userRepository.save(user);
+      console.log('[AuthService] User saved successfully, ID:', savedUser.id);
+
+      console.log('[AuthService] Generating JWT token');
+      const token = this.generateToken(savedUser.id);
+      console.log('[AuthService] Registration completed successfully');
+
+      return { user: savedUser, token };
+    } catch (error) {
+      console.error('[AuthService] Registration error:', error);
+      console.error('[AuthService] Error stack:', (error as Error).stack);
+      throw error;
     }
-
-    const user = this.userRepository.create({
-      email,
-      username,
-      password,
-    });
-
-    return await this.userRepository.save(user);
   }
 
   async login(email: string, password: string): Promise<{ user: User; token: string }> {

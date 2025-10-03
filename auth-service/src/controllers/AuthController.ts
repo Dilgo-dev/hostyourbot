@@ -12,17 +12,25 @@ export class AuthController {
 
   register = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { email, username, password } = req.body;
+      const { email, password } = req.body;
 
-      if (!email || !username || !password) {
+      if (!email || !password) {
         res.status(400).json({ error: 'Missing required fields' });
         return;
       }
 
-      const user = await this.authService.register(email, username, password);
+      const { user, token } = await this.authService.register(email, password);
 
       const userResponse = { ...user };
       delete (userResponse as any).password;
+
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+        path: '/',
+      });
 
       res.status(201).json({
         message: 'User registered successfully',
@@ -47,10 +55,17 @@ export class AuthController {
       const userResponse = { ...user };
       delete (userResponse as any).password;
 
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+        path: '/',
+      });
+
       res.status(200).json({
         message: 'Login successful',
         user: userResponse,
-        token,
       });
     } catch (error) {
       res.status(401).json({ error: (error as Error).message });
@@ -78,6 +93,7 @@ export class AuthController {
   };
 
   logout = async (req: Request, res: Response): Promise<void> => {
+    res.clearCookie('token', { path: '/' });
     res.status(200).json({ message: 'Logout successful' });
   };
 }
