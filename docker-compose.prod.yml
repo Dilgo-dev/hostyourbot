@@ -30,6 +30,21 @@ services:
       - postgres-auth
     restart: unless-stopped
 
+  logs-service:
+    build:
+      context: ./logs-service
+      target: production
+    container_name: hostyourbot-logs-service-prod
+    ports:
+      - "3002:3002"
+    volumes:
+      - logs-data:/root/data
+    environment:
+      - ENVIRONMENT=production
+      - PORT=3002
+      - DATABASE_PATH=/root/data/logs.db
+    restart: unless-stopped
+
   client:
     build:
       context: ./client
@@ -43,3 +58,4 @@ services:
 
 volumes:
   postgres-auth-data:
+  logs-data:

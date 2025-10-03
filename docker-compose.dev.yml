@@ -43,6 +43,22 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  logs-service:
+    build:
+      context: ./logs-service
+      target: development
+    container_name: hostyourbot-logs-service-dev
+    ports:
+      - "3002:3002"
+    volumes:
+      - ./logs-service:/app
+      - logs-data:/app/data
+    environment:
+      - ENVIRONMENT=development
+      - PORT=3002
+      - DATABASE_PATH=/app/data/logs.db
+    restart: unless-stopped
+
   client:
     build:
       context: ./client
@@ -61,3 +77,4 @@ services:
 
 volumes:
   postgres-auth-data:
+  logs-data:
