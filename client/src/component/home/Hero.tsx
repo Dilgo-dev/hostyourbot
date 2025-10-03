@@ -4,7 +4,7 @@ import { FaRocket, FaServer, FaShieldAlt } from 'react-icons/fa';
 
 export default function Hero() {
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-slate-900 flex items-center justify-center px-4 pt-16">
       <div className="max-w-6xl mx-auto text-center">
         {/* Badge */}
         <motion.div
