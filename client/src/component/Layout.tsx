@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FaRocket } from 'react-icons/fa';
 
@@ -29,11 +29,10 @@ export default function Layout() {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            {/* Logo */}
-            <div className="flex items-center gap-2">
+            <Link to="/" className="flex items-center gap-2">
               <FaRocket className="text-purple-400 text-2xl" />
               <span className="text-white text-xl font-bold">HostYourBot</span>
-            </div>
+            </Link>
 
             {/* Navigation centrale */}
             <div className="hidden md:flex items-center gap-8">
@@ -57,14 +56,19 @@ export default function Layout() {
               </a>
             </div>
 
-            {/* Boutons d'action */}
             <div className="flex items-center gap-4">
-              <button className="hidden sm:block text-slate-300 hover:text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200">
+              <Link
+                to="/login"
+                className="hidden sm:block text-slate-300 hover:text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200"
+              >
                 Connexion
-              </button>
-              <button className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg font-semibold transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/50">
+              </Link>
+              <Link
+                to="/register"
+                className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg font-semibold transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/50"
+              >
                 Démarrer
-              </button>
+              </Link>
             </div>
           </div>
         </div>
