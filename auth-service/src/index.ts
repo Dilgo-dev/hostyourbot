@@ -7,6 +7,7 @@ import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import { AppDataSource } from './config/database';
 import authRoutes from './routes/authRoutes';
+import { initLogsGrpcClient } from './grpc/logsGrpcClient';
 
 dotenv.config();
 
@@ -37,6 +38,8 @@ app.get('/health', (req: Request, res: Response) => {
 AppDataSource.initialize()
   .then(() => {
     console.log('Database connected successfully');
+
+    initLogsGrpcClient();
 
     app.listen(PORT, () => {
       console.log(`Auth service running on port ${PORT}`);
