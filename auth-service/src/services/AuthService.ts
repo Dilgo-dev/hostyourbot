@@ -11,21 +11,30 @@ export class AuthService {
   }
 
   async register(email: string, password: string): Promise<{ user: User; token: string }> {
+    console.log('[AuthService] Starting registration for:', email);
+
     const existingUser = await this.userRepository.findOne({
       where: { email },
     });
 
     if (existingUser) {
+      console.log('[AuthService] User already exists:', email);
       throw new Error('User already exists');
     }
 
+    console.log('[AuthService] Creating user entity');
     const user = this.userRepository.create({
       email,
       password,
     });
 
+    console.log('[AuthService] Saving user to database (bcrypt hashing will occur)');
     const savedUser = await this.userRepository.save(user);
+    console.log('[AuthService] User saved successfully, ID:', savedUser.id);
+
+    console.log('[AuthService] Generating JWT token');
     const token = this.generateToken(savedUser.id);
+    console.log('[AuthService] Registration completed successfully');
 
     return { user: savedUser, token };
   }
