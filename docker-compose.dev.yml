@@ -37,6 +37,7 @@ services:
       - DB_NAME=auth_db
       - JWT_SECRET=dev_secret_key_change_in_production
       - NODE_OPTIONS=--max-old-space-size=512
+      - CLIENT_URL=http://localhost:5174
     depends_on:
       postgres-auth:
         condition: service_healthy
