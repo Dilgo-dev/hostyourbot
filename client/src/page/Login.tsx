@@ -41,12 +41,14 @@ export default function Login() {
 
     try {
       await login(formData.email, formData.password);
-      navigate('/');
     } catch (err: any) {
       console.error('Login error:', err);
-    } finally {
       setIsSubmitting(false);
+      return;
     }
+
+    setIsSubmitting(false);
+    navigate('/');
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
