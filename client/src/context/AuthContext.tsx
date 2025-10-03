@@ -59,6 +59,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setLoading(true);
       const response = await authService.register(email, password);
       setUser(response.user);
+      localStorage.setItem('token', response.token);
       localStorage.setItem('user', JSON.stringify(response.user));
     } catch (err: any) {
       const message = err.response?.data?.error || 'Registration failed';

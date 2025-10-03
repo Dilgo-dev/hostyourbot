@@ -19,7 +19,7 @@ export class User {
   email: string;
 
   @Column()
-  @MinLength(6)
+  @MinLength(8)
   password: string;
 
   @CreateDateColumn()

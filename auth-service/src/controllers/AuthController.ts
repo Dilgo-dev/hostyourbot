@@ -19,7 +19,7 @@ export class AuthController {
         return;
       }
 
-      const user = await this.authService.register(email, password);
+      const { user, token } = await this.authService.register(email, password);
 
       const userResponse = { ...user };
       delete (userResponse as any).password;
@@ -27,6 +27,7 @@ export class AuthController {
       res.status(201).json({
         message: 'User registered successfully',
         user: userResponse,
+        token,
       });
     } catch (error) {
       res.status(400).json({ error: (error as Error).message });

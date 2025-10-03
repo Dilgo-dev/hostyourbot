@@ -51,7 +51,7 @@ export default function Register() {
 
     try {
       await register(formData.email, formData.password);
-      navigate('/login');
+      navigate('/');
     } catch (err: any) {
       console.error('Registration error:', err);
     } finally {

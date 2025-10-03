@@ -10,7 +10,7 @@ export class AuthService {
     this.userRepository = AppDataSource.getRepository(User);
   }
 
-  async register(email: string, password: string): Promise<User> {
+  async register(email: string, password: string): Promise<{ user: User; token: string }> {
     const existingUser = await this.userRepository.findOne({
       where: { email },
     });
@@ -24,7 +24,10 @@ export class AuthService {
       password,
     });
 
-    return await this.userRepository.save(user);
+    const savedUser = await this.userRepository.save(user);
+    const token = this.generateToken(savedUser.id);
+
+    return { user: savedUser, token };
   }
 
   async login(email: string, password: string): Promise<{ user: User; token: string }> {
