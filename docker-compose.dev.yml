@@ -10,6 +10,11 @@ services:
       - "5432:5432"
     volumes:
       - postgres-auth-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d auth_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     restart: unless-stopped
 
   auth-service:
@@ -32,7 +37,8 @@ services:
       - DB_NAME=auth_db
       - JWT_SECRET=dev_secret_key_change_in_production
     depends_on:
-      - postgres-auth
+      postgres-auth:
+        condition: service_healthy
     restart: unless-stopped
 
   client:
