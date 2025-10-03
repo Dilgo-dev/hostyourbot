@@ -10,13 +10,11 @@ export interface User {
 export interface RegisterResponse {
   message: string;
   user: User;
-  token: string;
 }
 
 export interface LoginResponse {
   message: string;
   user: User;
-  token: string;
 }
 
 export const authService = {

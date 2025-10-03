@@ -32,17 +32,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   useEffect(() => {
     const initAuth = async () => {
-      const token = localStorage.getItem('token');
       const savedUser = localStorage.getItem('user');
 
-      if (token && savedUser) {
+      if (savedUser) {
         try {
           setUser(JSON.parse(savedUser));
           const { user: currentUser } = await authService.getCurrentUser();
           setUser(currentUser);
           localStorage.setItem('user', JSON.stringify(currentUser));
         } catch (err) {
-          localStorage.removeItem('token');
           localStorage.removeItem('user');
           setUser(null);
         }
@@ -59,7 +57,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setLoading(true);
       const response = await authService.register(email, password);
       setUser(response.user);
-      localStorage.setItem('token', response.token);
       localStorage.setItem('user', JSON.stringify(response.user));
     } catch (err: any) {
       const message = err.response?.data?.error || 'Registration failed';
@@ -76,7 +73,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setLoading(true);
       const response = await authService.login(email, password);
       setUser(response.user);
-      localStorage.setItem('token', response.token);
       localStorage.setItem('user', JSON.stringify(response.user));
     } catch (err: any) {
       const message = err.response?.data?.error || 'Login failed';
@@ -94,7 +90,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       console.error('Logout error:', err);
     } finally {
       setUser(null);
-      localStorage.removeItem('token');
       localStorage.removeItem('user');
     }
   };

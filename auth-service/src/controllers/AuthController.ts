@@ -24,10 +24,17 @@ export class AuthController {
       const userResponse = { ...user };
       delete (userResponse as any).password;
 
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+        path: '/',
+      });
+
       res.status(201).json({
         message: 'User registered successfully',
         user: userResponse,
-        token,
       });
     } catch (error) {
       res.status(400).json({ error: (error as Error).message });
@@ -48,10 +55,17 @@ export class AuthController {
       const userResponse = { ...user };
       delete (userResponse as any).password;
 
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+        path: '/',
+      });
+
       res.status(200).json({
         message: 'Login successful',
         user: userResponse,
-        token,
       });
     } catch (error) {
       res.status(401).json({ error: (error as Error).message });
@@ -79,6 +93,7 @@ export class AuthController {
   };
 
   logout = async (req: Request, res: Response): Promise<void> => {
+    res.clearCookie('token', { path: '/' });
     res.status(200).json({ message: 'Logout successful' });
   };
 }
