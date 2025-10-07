@@ -1,6 +1,7 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import { config } from './config/env';
+import botRoutes from './routes/botRoutes';
 import namespaceRoutes from './routes/namespaceRoutes';
 import podRoutes from './routes/podRoutes';
 import deploymentRoutes from './routes/deploymentRoutes';
@@ -32,10 +33,12 @@ async function start() {
       };
     });
 
-    await fastify.register(namespaceRoutes, { prefix: '/api/v1' });
-    await fastify.register(podRoutes, { prefix: '/api/v1' });
-    await fastify.register(deploymentRoutes, { prefix: '/api/v1' });
-    await fastify.register(serviceRoutes, { prefix: '/api/v1' });
+    await fastify.register(botRoutes, { prefix: '/api/v1' });
+
+    await fastify.register(namespaceRoutes, { prefix: '/api/v1/k8s' });
+    await fastify.register(podRoutes, { prefix: '/api/v1/k8s' });
+    await fastify.register(deploymentRoutes, { prefix: '/api/v1/k8s' });
+    await fastify.register(serviceRoutes, { prefix: '/api/v1/k8s' });
 
     await fastify.listen({ port: config.port, host: '0.0.0.0' });
 
