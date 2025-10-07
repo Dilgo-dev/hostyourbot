@@ -62,6 +62,24 @@ services:
       - DATABASE_PATH=/app/data/logs.db
     restart: unless-stopped
 
+  k8s-service:
+    build:
+      context: ./k8s-service
+      target: development
+    container_name: hostyourbot-k8s-service-dev
+    ports:
+      - "3003:3003"
+    volumes:
+      - ./k8s-service:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - ENVIRONMENT=development
+      - PORT=3003
+      - K8S_API_URL=${K8S_API_URL}
+      - K8S_API_TOKEN=${K8S_API_TOKEN}
+    restart: unless-stopped
+
   client:
     build:
       context: ./client
