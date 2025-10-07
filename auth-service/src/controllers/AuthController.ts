@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { AuthService } from '../services/AuthService';
 import { validate } from 'class-validator';
 import { User } from '../entities/User';
+import { logInfo, logError, logWarn } from '../utils/logger';
 
 export class AuthController {
   private authService: AuthService;
@@ -15,6 +16,7 @@ export class AuthController {
       const { email, password } = req.body;
 
       if (!email || !password) {
+        await logWarn('Tentative d\'inscription avec des champs manquants', { email: email || 'non fourni' });
         res.status(400).json({ error: 'Missing required fields' });
         return;
       }
@@ -32,11 +34,14 @@ export class AuthController {
         path: '/',
       });
 
+      await logInfo('Utilisateur inscrit avec succès', { userId: user.id, email: user.email });
+
       res.status(201).json({
         message: 'User registered successfully',
         user: userResponse,
       });
     } catch (error) {
+      await logError('Échec de l\'inscription', { error: (error as Error).message });
       res.status(400).json({ error: (error as Error).message });
     }
   };
@@ -46,6 +51,7 @@ export class AuthController {
       const { email, password } = req.body;
 
       if (!email || !password) {
+        await logWarn('Tentative de connexion avec des champs manquants', { email: email || 'non fourni' });
         res.status(400).json({ error: 'Missing required fields' });
         return;
       }
@@ -63,11 +69,14 @@ export class AuthController {
         path: '/',
       });
 
+      await logInfo('Connexion réussie', { userId: user.id, email: user.email });
+
       res.status(200).json({
         message: 'Login successful',
         user: userResponse,
       });
     } catch (error) {
+      await logError('Échec de connexion', { error: (error as Error).message });
       res.status(401).json({ error: (error as Error).message });
     }
   };
@@ -93,7 +102,12 @@ export class AuthController {
   };
 
   logout = async (req: Request, res: Response): Promise<void> => {
+    const userId = (req as any).userId;
+
     res.clearCookie('token', { path: '/' });
+
+    await logInfo('Déconnexion réussie', { userId: userId || 'inconnu' });
+
     res.status(200).json({ message: 'Logout successful' });
   };
 }

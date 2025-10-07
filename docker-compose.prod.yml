@@ -26,8 +26,26 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${DB_NAME}
       - JWT_SECRET=${JWT_SECRET}
+      - LOGS_GRPC_URL=logs-service:50052
     depends_on:
       - postgres-auth
+    restart: unless-stopped
+
+  logs-service:
+    build:
+      context: ./logs-service
+      target: production
+    container_name: hostyourbot-logs-service-prod
+    ports:
+      - "3002:3002"
+      - "50052:50052"
+    volumes:
+      - logs-data:/root/data
+    environment:
+      - ENVIRONMENT=production
+      - PORT=3002
+      - GRPC_PORT=50052
+      - DATABASE_PATH=/root/data/logs.db
     restart: unless-stopped
 
   client:
@@ -43,3 +61,4 @@ services:
 
 volumes:
   postgres-auth-data:
+  logs-data:

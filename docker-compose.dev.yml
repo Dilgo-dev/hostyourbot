@@ -38,9 +38,28 @@ services:
       - JWT_SECRET=dev_secret_key_change_in_production
       - NODE_OPTIONS=--max-old-space-size=512
       - CLIENT_URL=http://localhost:5174
+      - LOGS_GRPC_URL=logs-service:50052
     depends_on:
       postgres-auth:
         condition: service_healthy
+    restart: unless-stopped
+
+  logs-service:
+    build:
+      context: ./logs-service
+      target: development
+    container_name: hostyourbot-logs-service-dev
+    ports:
+      - "3002:3002"
+      - "50052:50052"
+    volumes:
+      - ./logs-service:/app
+      - logs-data:/app/data
+    environment:
+      - ENVIRONMENT=development
+      - PORT=3002
+      - GRPC_PORT=50052
+      - DATABASE_PATH=/app/data/logs.db
     restart: unless-stopped
 
   client:
@@ -61,3 +80,4 @@ services:
 
 volumes:
   postgres-auth-data:
+  logs-data:
