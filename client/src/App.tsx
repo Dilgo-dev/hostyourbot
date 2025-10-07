@@ -4,6 +4,7 @@ import Layout from "./component/Layout";
 import Home from "./page/Home";
 import Register from "./page/Register";
 import Login from "./page/Login";
+import Dashboard from "./page/Dashboard";
 import NotFound from "./page/NotFound";
 
 const router = createBrowserRouter([
@@ -28,6 +29,10 @@ const router = createBrowserRouter([
         element: <NotFound />,
       },
     ],
+  },
+  {
+    path: "/dashboard",
+    element: <Dashboard />,
   },
 ]);
 
