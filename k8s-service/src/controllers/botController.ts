@@ -1,15 +1,52 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { BotDeploymentService } from '../services/botDeploymentService';
-import { BotDeploymentRequest, BotScaleRequest } from '../types/bot';
+import { BotScaleRequest, EnvVar } from '../types/bot';
 
 const botService = new BotDeploymentService();
 
 export const deployBot = async (
-  request: FastifyRequest<{ Body: BotDeploymentRequest }>,
+  request: FastifyRequest,
   reply: FastifyReply
 ) => {
   try {
-    const bot = await botService.deployBot(request.body);
+    const parts = await request.parts();
+    const fields: Record<string, string> = {};
+    let zipFile: Buffer | null = null;
+
+    for await (const part of parts) {
+      if (part.type === 'file') {
+        if (part.fieldname === 'zipFile') {
+          zipFile = await part.toBuffer();
+        }
+      } else {
+        fields[part.fieldname] = part.value as string;
+      }
+    }
+
+    if (!fields.name || !fields.language || !fields.version) {
+      return reply.status(400).send({
+        error: 'Missing required fields',
+        message: 'name, language, and version are required'
+      });
+    }
+
+    let envVars: EnvVar[] = [];
+    if (fields.envVars) {
+      try {
+        envVars = JSON.parse(fields.envVars);
+      } catch {
+        envVars = [];
+      }
+    }
+
+    const bot = await botService.deployBot({
+      name: fields.name,
+      language: fields.language,
+      version: fields.version,
+      env: envVars,
+      image: `${fields.language}:${fields.version}`,
+    });
+
     reply.status(201).send(bot);
   } catch (error: any) {
     reply.status(400).send({ error: 'Failed to deploy bot', message: error.message });

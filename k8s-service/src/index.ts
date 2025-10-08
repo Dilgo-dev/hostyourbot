@@ -1,5 +1,6 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import multipart from '@fastify/multipart';
 import { config } from './config/env';
 import botRoutes from './routes/botRoutes';
 import namespaceRoutes from './routes/namespaceRoutes';
@@ -21,6 +22,12 @@ async function start() {
     await fastify.register(cors, {
       origin: true,
       credentials: true,
+    });
+
+    await fastify.register(multipart, {
+      limits: {
+        fileSize: 100 * 1024 * 1024,
+      },
     });
 
     fastify.get('/health', async (request, reply) => {
