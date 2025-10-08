@@ -9,12 +9,6 @@ export const deployBot = async (
   reply: FastifyReply
 ) => {
   try {
-    const data = await request.file();
-
-    if (!data) {
-      return reply.status(400).send({ error: 'No file uploaded' });
-    }
-
     const parts = await request.parts();
     const fields: Record<string, string> = {};
     let zipFile: Buffer | null = null;
