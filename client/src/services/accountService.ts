@@ -15,7 +15,7 @@ export interface DeleteAccountResponse {
 
 export const accountService = {
   async updatePassword(oldPassword: string, newPassword: string): Promise<UpdatePasswordResponse> {
-    const response = await authApi.put<UpdatePasswordResponse>('/api/account/password', {
+    const response = await authApi.put<UpdatePasswordResponse>('/api/auth/account/password', {
       oldPassword,
       newPassword,
     });
@@ -23,7 +23,7 @@ export const accountService = {
   },
 
   async deleteAccount(): Promise<DeleteAccountResponse> {
-    const response = await authApi.delete<DeleteAccountResponse>('/api/account');
+    const response = await authApi.delete<DeleteAccountResponse>('/api/auth/account');
     return response.data;
   },
 };
