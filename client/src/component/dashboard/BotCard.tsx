@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   FaPlay,
@@ -23,6 +24,7 @@ interface BotCardProps {
 
 export default function BotCard({ bot, onStart, onStop, onRestart, onDelete, loading = false }: BotCardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const navigate = useNavigate();
 
   const getStatusColor = () => {
     switch (bot.status) {
@@ -62,12 +64,15 @@ export default function BotCard({ bot, onStart, onStop, onRestart, onDelete, loa
       className="bg-slate-800/50 border border-slate-700 rounded-lg p-5 hover:border-purple-500/50 hover:bg-slate-800 transition-all duration-200"
     >
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
+        <div
+          className="flex items-center gap-3 flex-1 cursor-pointer"
+          onClick={() => navigate(`/dashboard/bots/${bot.id}`)}
+        >
           <div className="w-10 h-10 bg-slate-700/70 rounded-lg flex items-center justify-center">
             {getLanguageIcon()}
           </div>
           <div>
-            <h3 className="text-white font-semibold">{bot.name}</h3>
+            <h3 className="text-white font-semibold hover:text-purple-400 transition-colors">{bot.name}</h3>
             <div className="flex items-center gap-2 mt-1">
               <FaCircle className={`text-xs ${getStatusColor()}`} />
               <span className={`text-xs capitalize ${getStatusColor()}`}>{bot.status}</span>
