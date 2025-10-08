@@ -20,7 +20,7 @@ export interface CreateBotRequest {
   name: string;
   language: string;
   version: string;
-  files: File[];
+  zipFile: File | null;
   envVars: EnvVar[];
 }
 

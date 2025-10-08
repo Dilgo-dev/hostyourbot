@@ -1,4 +1,4 @@
-import { FaNodeJs, FaPython, FaFile, FaKey } from 'react-icons/fa';
+import { FaNodeJs, FaPython, FaFileArchive, FaKey } from 'react-icons/fa';
 import { SiGo, SiRust } from 'react-icons/si';
 import type { EnvVar } from '../../services/botService';
 
@@ -6,7 +6,7 @@ interface DeploymentSummaryProps {
   name: string;
   language: string;
   version: string;
-  files: File[];
+  zipFile: File | null;
   envVars: EnvVar[];
 }
 
@@ -14,7 +14,7 @@ export default function DeploymentSummary({
   name,
   language,
   version,
-  files,
+  zipFile,
   envVars,
 }: DeploymentSummaryProps) {
   const getLanguageIcon = () => {
@@ -55,8 +55,6 @@ export default function DeploymentSummary({
     return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
   };
 
-  const totalSize = files.reduce((acc, file) => acc + file.size, 0);
-
   return (
     <div className="space-y-6">
       <div className="bg-purple-600/10 border border-purple-500/30 rounded-lg p-4">
@@ -84,25 +82,17 @@ export default function DeploymentSummary({
 
         <div className="border-t border-slate-700 pt-6">
           <div className="flex items-center gap-2 mb-3">
-            <FaFile className="text-slate-400" />
-            <p className="text-slate-400 text-sm">
-              Fichiers ({files.length}) - {formatFileSize(totalSize)}
-            </p>
+            <FaFileArchive className="text-slate-400" />
+            <p className="text-slate-400 text-sm">Archive du projet</p>
           </div>
-          {files.length > 0 ? (
-            <div className="bg-slate-800 rounded-lg p-4 max-h-40 overflow-y-auto">
-              <div className="space-y-2">
-                {files.slice(0, 5).map((file, index) => (
-                  <div key={index} className="flex items-center justify-between">
-                    <p className="text-white text-sm truncate flex-1">{file.name}</p>
-                    <p className="text-slate-500 text-xs ml-4">{formatFileSize(file.size)}</p>
-                  </div>
-                ))}
-                {files.length > 5 && (
-                  <p className="text-slate-500 text-sm">
-                    et {files.length - 5} fichier{files.length - 5 > 1 ? 's' : ''} de plus...
-                  </p>
-                )}
+          {zipFile ? (
+            <div className="bg-slate-800 rounded-lg p-4">
+              <div className="flex items-center gap-3">
+                <FaFileArchive className="text-purple-400 text-xl" />
+                <div className="flex-1">
+                  <p className="text-white text-sm">{zipFile.name}</p>
+                  <p className="text-slate-500 text-xs">{formatFileSize(zipFile.size)}</p>
+                </div>
               </div>
             </div>
           ) : (

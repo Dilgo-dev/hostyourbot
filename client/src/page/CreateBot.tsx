@@ -19,7 +19,7 @@ export default function CreateBot() {
   const [name, setName] = useState('');
   const [language, setLanguage] = useState('nodejs');
   const [version, setVersion] = useState('LTS');
-  const [files, setFiles] = useState<File[]>([]);
+  const [zipFile, setZipFile] = useState<File | null>(null);
   const [envVars, setEnvVars] = useState<EnvVar[]>([]);
 
   const steps = ['Configuration', 'Fichiers', 'Variables', 'Récapitulatif'];
@@ -49,7 +49,7 @@ export default function CreateBot() {
         name,
         language,
         version,
-        files,
+        zipFile,
         envVars: validEnvVars,
       });
 
@@ -86,7 +86,7 @@ export default function CreateBot() {
         );
 
       case 2:
-        return <FileUploader files={files} onFilesChange={setFiles} />;
+        return <FileUploader zipFile={zipFile} onFileChange={setZipFile} />;
 
       case 3:
         return <EnvVarEditor envVars={envVars} onEnvVarsChange={setEnvVars} />;
@@ -97,7 +97,7 @@ export default function CreateBot() {
             name={name}
             language={language}
             version={version}
-            files={files}
+            zipFile={zipFile}
             envVars={envVars}
           />
         );
