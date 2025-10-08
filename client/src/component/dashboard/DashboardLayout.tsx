@@ -7,7 +7,8 @@ import {
   FaChevronLeft,
   FaChevronRight,
   FaUser,
-  FaCircle
+  FaCircle,
+  FaCog
 } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
 import { botService, type Bot } from '../../services/botService';
@@ -131,6 +132,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 </div>
               </div>
               <button
+                onClick={() => navigate('/dashboard/settings')}
+                className="w-full flex items-center gap-3 px-3 py-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-all duration-200 mb-2"
+              >
+                <FaCog className="text-lg" />
+                <span className="font-medium text-sm">Paramètres</span>
+              </button>
+              <button
                 onClick={handleLogout}
                 className="w-full flex items-center gap-3 px-3 py-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-all duration-200"
               >
@@ -139,13 +147,22 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               </button>
             </>
           ) : (
-            <button
-              onClick={handleLogout}
-              className="w-10 h-10 flex items-center justify-center text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-all duration-200 mx-auto"
-              title="Déconnexion"
-            >
-              <FaSignOutAlt className="text-lg" />
-            </button>
+            <>
+              <button
+                onClick={() => navigate('/dashboard/settings')}
+                className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-all duration-200 mx-auto mb-2"
+                title="Paramètres"
+              >
+                <FaCog className="text-lg" />
+              </button>
+              <button
+                onClick={handleLogout}
+                className="w-10 h-10 flex items-center justify-center text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-all duration-200 mx-auto"
+                title="Déconnexion"
+              >
+                <FaSignOutAlt className="text-lg" />
+              </button>
+            </>
           )}
         </div>
       </motion.aside>

@@ -7,6 +7,7 @@ import Login from "./page/Login";
 import Dashboard from "./page/Dashboard";
 import CreateBot from "./page/CreateBot";
 import BotDetail from "./page/BotDetail";
+import AccountSettings from "./page/AccountSettings";
 import NotFound from "./page/NotFound";
 
 const router = createBrowserRouter([
@@ -43,6 +44,10 @@ const router = createBrowserRouter([
   {
     path: "/dashboard/bots/:id",
     element: <BotDetail />,
+  },
+  {
+    path: "/dashboard/settings",
+    element: <AccountSettings />,
   },
 ]);
 
