@@ -40,6 +40,11 @@ export const deployBot = async (
       }
     }
 
+    let zipFileBase64: string | undefined;
+    if (zipFile && zipFile.length > 0) {
+      zipFileBase64 = zipFile.toString('base64');
+    }
+
     const bot = await botService.deployBot({
       name: fields.name,
       language: fields.language,
@@ -47,6 +52,7 @@ export const deployBot = async (
       env: envVars,
       image: getDockerImage(fields.language, fields.version),
       startCommand: fields.startCommand,
+      zipFileBase64,
     });
 
     reply.status(201).send(bot);

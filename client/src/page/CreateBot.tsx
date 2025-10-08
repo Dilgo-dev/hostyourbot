@@ -104,6 +104,7 @@ export default function CreateBot() {
             language={language}
             version={version}
             zipFile={zipFile}
+            startCommand={startCommand}
             envVars={envVars}
           />
         );

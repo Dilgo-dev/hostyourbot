@@ -1,5 +1,5 @@
 import { K8sClient } from './k8sClient';
-import { Deployment, Container, Service } from '../types/k8s';
+import { Deployment, Container, Service, ConfigMap, Volume, VolumeMount } from '../types/k8s';
 import { Bot, BotConfig, BotStatus, BotType } from '../types/bot';
 
 export class BotDeploymentService {
@@ -22,6 +22,33 @@ export class BotDeploymentService {
       'managed-by': 'hostyourbot',
     };
 
+    const volumes: Volume[] = [];
+    const initContainers: Container[] = [];
+
+    if (config.zipFileBase64) {
+      volumes.push({
+        name: 'bot-code',
+        emptyDir: {},
+      });
+      volumes.push({
+        name: 'bot-zip',
+        configMap: {
+          name: `${botId}-code`,
+        },
+      });
+
+      initContainers.push({
+        name: 'unzip-code',
+        image: 'busybox:latest',
+        command: ['sh', '-c'],
+        args: ['unzip -o /zip/bot.zip -d /app && chmod -R 755 /app'],
+        volumeMounts: [
+          { name: 'bot-zip', mountPath: '/zip', readOnly: true },
+          { name: 'bot-code', mountPath: '/app' },
+        ],
+      });
+    }
+
     const container: Container = {
       name: botId,
       image: config.image,
@@ -30,12 +57,18 @@ export class BotDeploymentService {
         : [],
     };
 
+    if (config.zipFileBase64) {
+      container.volumeMounts = [
+        { name: 'bot-code', mountPath: '/app' },
+      ];
+      container.env = container.env || [];
+      container.env.push({ name: 'WORKDIR', value: '/app' });
+    }
+
     if (config.startCommand) {
       const commandParts = config.startCommand.trim().split(/\s+/);
-      container.command = [commandParts[0]];
-      if (commandParts.length > 1) {
-        container.args = commandParts.slice(1);
-      }
+      container.command = ['sh', '-c'];
+      container.args = [`cd /app && ${config.startCommand}`];
     } else {
       container.command = ['tail'];
       container.args = ['-f', '/dev/null'];
@@ -64,6 +97,8 @@ export class BotDeploymentService {
           },
           spec: {
             containers: [container],
+            initContainers: initContainers.length > 0 ? initContainers : undefined,
+            volumes: volumes.length > 0 ? volumes : undefined,
           },
         },
       },
@@ -142,6 +177,26 @@ export class BotDeploymentService {
 
     const botId = this.generateBotId(config.name);
 
+    if (config.zipFileBase64) {
+      const configMap: ConfigMap = {
+        apiVersion: 'v1',
+        kind: 'ConfigMap',
+        metadata: {
+          name: `${botId}-code`,
+          namespace: this.baseNamespace,
+          labels: {
+            app: botId,
+            'managed-by': 'hostyourbot',
+          },
+        },
+        binaryData: {
+          'bot.zip': config.zipFileBase64,
+        },
+      };
+
+      await this.k8sClient.createConfigMap(configMap, this.baseNamespace);
+    }
+
     const deploymentManifest = this.createDeploymentManifest(botId, config);
     const deployment = await this.k8sClient.createDeployment(
       deploymentManifest,
@@ -182,6 +237,11 @@ export class BotDeploymentService {
 
     try {
       await this.k8sClient.deleteService(botId, this.baseNamespace);
+    } catch {
+    }
+
+    try {
+      await this.k8sClient.deleteConfigMap(`${botId}-code`, this.baseNamespace);
     } catch {
     }
   }

@@ -15,6 +15,8 @@ export interface Pod extends K8sResource {
   kind: 'Pod';
   spec: {
     containers: Container[];
+    initContainers?: Container[];
+    volumes?: Volume[];
     restartPolicy?: string;
     nodeSelector?: Record<string, string>;
   };
@@ -45,6 +47,7 @@ export interface Container {
     value?: string;
     valueFrom?: any;
   }>;
+  volumeMounts?: VolumeMount[];
   resources?: {
     limits?: Record<string, string>;
     requests?: Record<string, string>;
@@ -64,6 +67,8 @@ export interface Deployment extends K8sResource {
       };
       spec: {
         containers: Container[];
+        initContainers?: Container[];
+        volumes?: Volume[];
       };
     };
   };
@@ -102,6 +107,31 @@ export interface Namespace extends K8sResource {
   status?: {
     phase: string;
   };
+}
+
+export interface ConfigMap extends K8sResource {
+  kind: 'ConfigMap';
+  data?: Record<string, string>;
+  binaryData?: Record<string, string>;
+}
+
+export interface Volume {
+  name: string;
+  emptyDir?: Record<string, any>;
+  configMap?: {
+    name: string;
+    items?: Array<{
+      key: string;
+      path: string;
+    }>;
+  };
+}
+
+export interface VolumeMount {
+  name: string;
+  mountPath: string;
+  subPath?: string;
+  readOnly?: boolean;
 }
 
 export interface K8sList<T extends K8sResource> {
