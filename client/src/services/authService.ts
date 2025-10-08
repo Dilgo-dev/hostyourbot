@@ -1,4 +1,4 @@
-import { api } from './api';
+import { authApi } from './api';
 
 export interface User {
   id: string;
@@ -19,7 +19,7 @@ export interface LoginResponse {
 
 export const authService = {
   async register(email: string, password: string): Promise<RegisterResponse> {
-    const response = await api.post<RegisterResponse>('/api/auth/register', {
+    const response = await authApi.post<RegisterResponse>('/api/auth/register', {
       email,
       password,
     });
@@ -27,7 +27,7 @@ export const authService = {
   },
 
   async login(email: string, password: string): Promise<LoginResponse> {
-    const response = await api.post<LoginResponse>('/api/auth/login', {
+    const response = await authApi.post<LoginResponse>('/api/auth/login', {
       email,
       password,
     });
@@ -35,11 +35,11 @@ export const authService = {
   },
 
   async getCurrentUser(): Promise<{ user: User }> {
-    const response = await api.get<{ user: User }>('/api/auth/me');
+    const response = await authApi.get<{ user: User }>('/api/auth/me');
     return response.data;
   },
 
   async logout(): Promise<void> {
-    await api.post('/api/auth/logout');
+    await authApi.post('/api/auth/logout');
   },
 };
