@@ -5,8 +5,7 @@ import { FaPlus, FaRedo } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import DashboardLayout from '../component/dashboard/DashboardLayout';
 import BotList from '../component/dashboard/BotList';
-import CreateBotModal from '../component/dashboard/CreateBotModal';
-import { botService, type Bot, type CreateBotRequest } from '../services/botService';
+import { botService, type Bot } from '../services/botService';
 
 export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
@@ -14,7 +13,6 @@ export default function Dashboard() {
   const [bots, setBots] = useState<Bot[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -44,11 +42,6 @@ export default function Dashboard() {
     setRefreshing(true);
     await loadDashboardData();
     setRefreshing(false);
-  };
-
-  const handleCreateBot = async (data: CreateBotRequest) => {
-    await botService.createBot(data);
-    await loadDashboardData();
   };
 
   const handleStartBot = async (id: string) => {
@@ -112,7 +105,7 @@ export default function Dashboard() {
             Actualiser
           </button>
           <button
-            onClick={() => setModalOpen(true)}
+            onClick={() => navigate('/dashboard/create')}
             className="flex items-center gap-2 px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/50"
           >
             <FaPlus />
@@ -129,12 +122,6 @@ export default function Dashboard() {
           onDelete={handleDeleteBot}
         />
       </motion.div>
-
-      <CreateBotModal
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onCreate={handleCreateBot}
-      />
     </DashboardLayout>
   );
 }
