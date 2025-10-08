@@ -89,7 +89,7 @@ export class BotDeploymentService {
     if (config.startCommand) {
       const commandParts = config.startCommand.trim().split(/\s+/);
       container.command = ['sh', '-c'];
-      container.args = [`cd /app && ${config.startCommand}`];
+      container.args = [`cd /app && npm install && ${config.startCommand}`];
     } else {
       container.command = ['tail'];
       container.args = ['-f', '/dev/null'];
