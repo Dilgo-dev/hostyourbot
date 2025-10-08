@@ -5,11 +5,11 @@ import {
   FaStop,
   FaRedo,
   FaTrash,
-  FaDiscord,
-  FaTelegram,
-  FaRobot,
+  FaNodeJs,
+  FaPython,
   FaCircle
 } from 'react-icons/fa';
+import { SiGo, SiRust } from 'react-icons/si';
 import type { Bot } from '../../services/botService';
 
 interface BotCardProps {
@@ -39,14 +39,18 @@ export default function BotCard({ bot, onStart, onStop, onRestart, onDelete, loa
     }
   };
 
-  const getTypeIcon = () => {
-    switch (bot.type) {
-      case 'discord':
-        return <FaDiscord className="text-xl text-indigo-400" />;
-      case 'telegram':
-        return <FaTelegram className="text-xl text-blue-400" />;
+  const getLanguageIcon = () => {
+    switch (bot.language) {
+      case 'nodejs':
+        return <FaNodeJs className="text-xl text-green-400" />;
+      case 'python':
+        return <FaPython className="text-xl text-blue-400" />;
+      case 'go':
+        return <SiGo className="text-xl text-cyan-400" />;
+      case 'rust':
+        return <SiRust className="text-xl text-orange-400" />;
       default:
-        return <FaRobot className="text-xl text-purple-400" />;
+        return <FaNodeJs className="text-xl text-purple-400" />;
     }
   };
 
@@ -60,13 +64,14 @@ export default function BotCard({ bot, onStart, onStop, onRestart, onDelete, loa
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-slate-700/70 rounded-lg flex items-center justify-center">
-            {getTypeIcon()}
+            {getLanguageIcon()}
           </div>
           <div>
             <h3 className="text-white font-semibold">{bot.name}</h3>
             <div className="flex items-center gap-2 mt-1">
               <FaCircle className={`text-xs ${getStatusColor()}`} />
               <span className={`text-xs capitalize ${getStatusColor()}`}>{bot.status}</span>
+              <span className="text-slate-500 text-xs">• {bot.version}</span>
             </div>
           </div>
         </div>

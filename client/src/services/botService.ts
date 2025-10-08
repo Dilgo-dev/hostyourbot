@@ -3,23 +3,25 @@ import { api } from './api';
 export interface Bot {
   id: string;
   name: string;
-  type: 'discord' | 'telegram' | 'other';
+  language: 'nodejs' | 'python' | 'go' | 'rust';
+  version: string;
   status: 'running' | 'stopped' | 'error' | 'deploying';
   createdAt: string;
   updatedAt: string;
-  replicas: number;
-  memory: string;
-  cpu: string;
   uptime?: number;
+}
+
+export interface EnvVar {
+  key: string;
+  value: string;
 }
 
 export interface CreateBotRequest {
   name: string;
-  type: 'discord' | 'telegram' | 'other';
-  token: string;
-  replicas?: number;
-  memory?: string;
-  cpu?: string;
+  language: string;
+  version: string;
+  files: File[];
+  envVars: EnvVar[];
 }
 
 export interface BotStats {

@@ -1,30 +1,58 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FaArrowLeft, FaDiscord, FaTelegram, FaRobot } from 'react-icons/fa';
+import { FaArrowLeft, FaArrowRight } from 'react-icons/fa';
 import DashboardLayout from '../component/dashboard/DashboardLayout';
-import { botService, type CreateBotRequest } from '../services/botService';
+import StepIndicator from '../component/createbot/StepIndicator';
+import LanguageSelector from '../component/createbot/LanguageSelector';
+import FileUploader from '../component/createbot/FileUploader';
+import EnvVarEditor from '../component/createbot/EnvVarEditor';
+import DeploymentSummary from '../component/createbot/DeploymentSummary';
+import { botService, type EnvVar } from '../services/botService';
 
 export default function CreateBot() {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState<CreateBotRequest>({
-    name: '',
-    type: 'discord',
-    token: '',
-    replicas: 1,
-    memory: '256Mi',
-    cpu: '100m',
-  });
+  const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const [name, setName] = useState('');
+  const [language, setLanguage] = useState('nodejs');
+  const [version, setVersion] = useState('LTS');
+  const [files, setFiles] = useState<File[]>([]);
+  const [envVars, setEnvVars] = useState<EnvVar[]>([]);
+
+  const steps = ['Configuration', 'Fichiers', 'Variables', 'Récapitulatif'];
+
+  const handleNext = () => {
+    if (currentStep === 1 && !name.trim()) {
+      setError('Veuillez entrer un nom pour votre bot');
+      return;
+    }
+    setError(null);
+    setCurrentStep((prev) => Math.min(prev + 1, steps.length));
+  };
+
+  const handlePrevious = () => {
+    setError(null);
+    setCurrentStep((prev) => Math.max(prev - 1, 1));
+  };
+
+  const handleDeploy = async () => {
     setError(null);
     setLoading(true);
 
     try {
-      await botService.createBot(formData);
+      const validEnvVars = envVars.filter((v) => v.key && v.value);
+
+      await botService.createBot({
+        name,
+        language,
+        version,
+        files,
+        envVars: validEnvVars,
+      });
+
       navigate('/dashboard');
     } catch (err: any) {
       setError(err.message || 'Erreur lors de la création du bot');
@@ -33,11 +61,51 @@ export default function CreateBot() {
     }
   };
 
-  const botTypes = [
-    { value: 'discord', label: 'Discord', icon: FaDiscord, color: 'indigo' },
-    { value: 'telegram', label: 'Telegram', icon: FaTelegram, color: 'blue' },
-    { value: 'other', label: 'Autre', icon: FaRobot, color: 'purple' },
-  ];
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 1:
+        return (
+          <div className="space-y-6">
+            <div>
+              <label className="block text-white text-sm font-medium mb-2">Nom du bot</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full bg-slate-900 border border-slate-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:border-purple-500 transition-colors"
+                placeholder="Mon Bot"
+              />
+            </div>
+            <LanguageSelector
+              selectedLanguage={language}
+              selectedVersion={version}
+              onLanguageChange={setLanguage}
+              onVersionChange={setVersion}
+            />
+          </div>
+        );
+
+      case 2:
+        return <FileUploader files={files} onFilesChange={setFiles} />;
+
+      case 3:
+        return <EnvVarEditor envVars={envVars} onEnvVarsChange={setEnvVars} />;
+
+      case 4:
+        return (
+          <DeploymentSummary
+            name={name}
+            language={language}
+            version={version}
+            files={files}
+            envVars={envVars}
+          />
+        );
+
+      default:
+        return null;
+    }
+  };
 
   return (
     <DashboardLayout>
@@ -45,7 +113,7 @@ export default function CreateBot() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.4 }}
-        className="max-w-3xl mx-auto"
+        className="max-w-4xl mx-auto"
       >
         <button
           onClick={() => navigate('/dashboard')}
@@ -56,136 +124,50 @@ export default function CreateBot() {
         </button>
 
         <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-8">
-          <h1 className="text-white text-2xl font-bold mb-6">Créer un nouveau bot</h1>
+          <h1 className="text-white text-2xl font-bold mb-8">Créer un nouveau bot</h1>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {error && (
-              <div className="bg-red-600/20 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg">
-                {error}
-              </div>
-            )}
+          <StepIndicator currentStep={currentStep} totalSteps={steps.length} steps={steps} />
 
-            <div>
-              <label className="block text-white text-sm font-medium mb-2">
-                Nom du bot
-              </label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required
-                className="w-full bg-slate-900 border border-slate-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:border-purple-500 transition-colors"
-                placeholder="Mon Bot Discord"
-              />
+          {error && (
+            <div className="bg-red-600/20 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg mb-6">
+              {error}
             </div>
+          )}
 
-            <div>
-              <label className="block text-white text-sm font-medium mb-3">
-                Type de bot
-              </label>
-              <div className="grid grid-cols-3 gap-4">
-                {botTypes.map((type) => (
-                  <button
-                    key={type.value}
-                    type="button"
-                    onClick={() => setFormData({ ...formData, type: type.value as any })}
-                    className={`p-6 border rounded-xl transition-all duration-200 ${
-                      formData.type === type.value
-                        ? `bg-${type.color}-600/20 border-${type.color}-500/50 text-${type.color}-400`
-                        : 'bg-slate-900 border-slate-700 text-slate-400 hover:border-slate-600'
-                    }`}
-                  >
-                    <type.icon className="text-4xl mx-auto mb-3" />
-                    <p className="text-sm font-medium">{type.label}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
+          <div className="mb-8">{renderStepContent()}</div>
 
-            <div>
-              <label className="block text-white text-sm font-medium mb-2">
-                Token du bot
-              </label>
-              <input
-                type="password"
-                value={formData.token}
-                onChange={(e) => setFormData({ ...formData, token: e.target.value })}
-                required
-                className="w-full bg-slate-900 border border-slate-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:border-purple-500 transition-colors font-mono text-sm"
-                placeholder="••••••••••••••••••••••••••••••"
-              />
-              <p className="text-slate-400 text-xs mt-2">
-                Le token de votre bot sera stocké de manière sécurisée
-              </p>
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <label className="block text-white text-sm font-medium mb-2">
-                  Replicas
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  max="10"
-                  value={formData.replicas}
-                  onChange={(e) => setFormData({ ...formData, replicas: parseInt(e.target.value) })}
-                  className="w-full bg-slate-900 border border-slate-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:border-purple-500 transition-colors"
-                />
-              </div>
-
-              <div>
-                <label className="block text-white text-sm font-medium mb-2">
-                  Mémoire
-                </label>
-                <select
-                  value={formData.memory}
-                  onChange={(e) => setFormData({ ...formData, memory: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:border-purple-500 transition-colors"
-                >
-                  <option value="128Mi">128 Mi</option>
-                  <option value="256Mi">256 Mi</option>
-                  <option value="512Mi">512 Mi</option>
-                  <option value="1Gi">1 Gi</option>
-                  <option value="2Gi">2 Gi</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-white text-sm font-medium mb-2">
-                  CPU
-                </label>
-                <select
-                  value={formData.cpu}
-                  onChange={(e) => setFormData({ ...formData, cpu: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:border-purple-500 transition-colors"
-                >
-                  <option value="50m">50m</option>
-                  <option value="100m">100m</option>
-                  <option value="250m">250m</option>
-                  <option value="500m">500m</option>
-                  <option value="1000m">1000m</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="flex gap-4 pt-6">
+          <div className="flex gap-4">
+            {currentStep > 1 && (
               <button
                 type="button"
-                onClick={() => navigate('/dashboard')}
-                className="flex-1 px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-semibold transition-colors"
+                onClick={handlePrevious}
+                className="flex items-center gap-2 px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-semibold transition-colors"
               >
-                Annuler
+                <FaArrowLeft />
+                Précédent
               </button>
+            )}
+
+            {currentStep < steps.length ? (
               <button
-                type="submit"
-                disabled={loading}
-                className="flex-1 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                type="button"
+                onClick={handleNext}
+                className="flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-colors ml-auto"
               >
-                {loading ? 'Création...' : 'Créer le bot'}
+                Suivant
+                <FaArrowRight />
               </button>
-            </div>
-          </form>
+            ) : (
+              <button
+                type="button"
+                onClick={handleDeploy}
+                disabled={loading}
+                className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ml-auto"
+              >
+                {loading ? 'Déploiement...' : 'Déployer le bot'}
+              </button>
+            )}
+          </div>
         </div>
       </motion.div>
     </DashboardLayout>

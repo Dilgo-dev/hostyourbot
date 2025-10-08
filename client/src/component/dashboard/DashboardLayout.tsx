@@ -99,7 +99,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                       <span className="text-white text-sm font-medium truncate">{bot.name}</span>
                       <FaCircle className={`text-xs ${getStatusColor(bot.status)}`} />
                     </div>
-                    <p className="text-slate-400 text-xs mt-1 capitalize">{bot.type}</p>
+                    <p className="text-slate-400 text-xs mt-1 capitalize">{bot.language} {bot.version}</p>
                   </div>
                 ))
               )}
