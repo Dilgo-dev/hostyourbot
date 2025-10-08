@@ -26,12 +26,15 @@ export default function BotDetail() {
   const loadBotData = async () => {
     try {
       setLoading(true);
+      console.log('Chargement du bot avec ID:', id);
       const botData = await botService.getBot(id!);
+      console.log('Données du bot reçues:', botData);
       setBot(botData);
     } catch (error) {
       console.error('Erreur lors du chargement du bot:', error);
       navigate('/dashboard');
     } finally {
+      console.log('Fin du chargement, loading = false');
       setLoading(false);
     }
   };
@@ -39,7 +42,9 @@ export default function BotDetail() {
   const loadLogs = async () => {
     try {
       setLogsLoading(true);
+      console.log('Chargement des logs pour le bot:', id);
       const logsData = await botService.getLogs(id!);
+      console.log('Logs reçus:', logsData);
       setLogs(logsData);
     } catch (error) {
       console.error('Erreur lors du chargement des logs:', error);

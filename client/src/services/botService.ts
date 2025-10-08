@@ -7,8 +7,15 @@ export interface Bot {
   version: string;
   status: 'running' | 'stopped' | 'error' | 'deploying';
   createdAt: string;
-  updatedAt: string;
+  updatedAt?: string;
   uptime?: number;
+  image?: string;
+  namespace?: string;
+  podInfo?: {
+    ready: number;
+    total: number;
+  };
+  replicas?: number;
 }
 
 export interface EnvVar {
@@ -40,8 +47,11 @@ export const botService = {
   },
 
   async getBot(id: string): Promise<Bot> {
-    const response = await k8sApi.get<{ bot: Bot }>(`/api/v1/bots/${id}`);
-    return response.data.bot;
+    const response = await k8sApi.get<Bot | { bot: Bot }>(`/api/v1/bots/${id}`);
+    if ('bot' in response.data) {
+      return response.data.bot;
+    }
+    return response.data as Bot;
   },
 
   async createBot(data: CreateBotRequest): Promise<Bot> {
@@ -100,7 +110,13 @@ export const botService = {
   },
 
   async getLogs(id: string, lines: number = 100): Promise<string[]> {
-    const response = await k8sApi.get<{ logs: string[] }>(`/api/v1/bots/${id}/logs?lines=${lines}`);
-    return response.data.logs;
+    const response = await k8sApi.get<{ logs: string | string[] }>(`/api/v1/bots/${id}/logs?lines=${lines}`);
+    const logs = response.data.logs;
+
+    if (typeof logs === 'string') {
+      return logs.split('\n').filter(line => line.trim() !== '');
+    }
+
+    return logs;
   },
 };
