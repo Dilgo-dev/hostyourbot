@@ -39,9 +39,20 @@ export class BotDeploymentService {
 
       initContainers.push({
         name: 'unzip-code',
-        image: 'busybox:latest',
+        image: 'alpine:latest',
         command: ['sh', '-c'],
-        args: ['unzip -o /zip/bot.zip -d /app && chmod -R 755 /app'],
+        args: [
+          'echo "Installing unzip..." && ' +
+          'apk add --no-cache unzip && ' +
+          'echo "Checking /zip content..." && ' +
+          'ls -la /zip && ' +
+          'echo "Unzipping bot.zip..." && ' +
+          'unzip -o /zip/bot.zip -d /app && ' +
+          'echo "Checking /app content..." && ' +
+          'ls -la /app && ' +
+          'chmod -R 755 /app && ' +
+          'echo "Init container completed successfully!"'
+        ],
         volumeMounts: [
           { name: 'bot-zip', mountPath: '/zip', readOnly: true },
           { name: 'bot-code', mountPath: '/app' },
