@@ -13,30 +13,25 @@ export enum BotStatus {
   UNKNOWN = 'unknown',
 }
 
+export interface EnvVar {
+  key: string;
+  value: string;
+}
+
 export interface BotConfig {
   name: string;
-  type: BotType;
+  language: string;
+  version: string;
   image: string;
-  token: string;
-  replicas?: number;
-  env?: Record<string, string>;
-  resources?: {
-    limits?: {
-      cpu?: string;
-      memory?: string;
-    };
-    requests?: {
-      cpu?: string;
-      memory?: string;
-    };
-  };
+  env?: EnvVar[];
   port?: number;
 }
 
 export interface Bot {
   id: string;
   name: string;
-  type: BotType;
+  language: string;
+  version: string;
   status: BotStatus;
   namespace: string;
   image: string;
@@ -52,21 +47,9 @@ export interface Bot {
 
 export interface BotDeploymentRequest {
   name: string;
-  type: BotType;
-  image: string;
-  token: string;
-  replicas?: number;
-  env?: Record<string, string>;
-  resources?: {
-    limits?: {
-      cpu?: string;
-      memory?: string;
-    };
-    requests?: {
-      cpu?: string;
-      memory?: string;
-    };
-  };
+  language: string;
+  version: string;
+  envVars: string;
 }
 
 export interface BotScaleRequest {

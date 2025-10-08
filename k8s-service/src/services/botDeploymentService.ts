@@ -17,21 +17,17 @@ export class BotDeploymentService {
   private createDeploymentManifest(botId: string, config: BotConfig): Deployment {
     const labels = {
       app: botId,
-      'bot-type': config.type,
+      'bot-language': config.language,
+      'bot-version': config.version,
       'managed-by': 'hostyourbot',
     };
 
     const container: Container = {
       name: botId,
       image: config.image,
-      env: [
-        { name: 'BOT_TOKEN', value: config.token },
-        { name: 'BOT_TYPE', value: config.type },
-        ...(config.env
-          ? Object.entries(config.env).map(([name, value]) => ({ name, value }))
-          : []),
-      ],
-      resources: config.resources,
+      env: config.env
+        ? config.env.map((envVar) => ({ name: envVar.key, value: envVar.value }))
+        : [],
     };
 
     if (config.port) {
@@ -47,7 +43,7 @@ export class BotDeploymentService {
         labels,
       },
       spec: {
-        replicas: config.replicas || 1,
+        replicas: 1,
         selector: {
           matchLabels: { app: botId },
         },
@@ -116,7 +112,8 @@ export class BotDeploymentService {
     return {
       id: deployment.metadata.name,
       name: deployment.metadata.name.replace('bot-', ''),
-      type: (deployment.metadata.labels?.['bot-type'] as BotType) || BotType.CUSTOM,
+      language: deployment.metadata.labels?.['bot-language'] || 'unknown',
+      version: deployment.metadata.labels?.['bot-version'] || 'unknown',
       status,
       namespace: deployment.metadata.namespace || this.baseNamespace,
       image: deployment.spec.template.spec.containers[0]?.image || '',
