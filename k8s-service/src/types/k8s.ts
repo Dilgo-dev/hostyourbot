@@ -34,6 +34,8 @@ export interface Pod extends K8sResource {
 export interface Container {
   name: string;
   image: string;
+  command?: string[];
+  args?: string[];
   ports?: Array<{
     containerPort: number;
     protocol?: string;

@@ -6,6 +6,7 @@ import DashboardLayout from '../component/dashboard/DashboardLayout';
 import StepIndicator from '../component/createbot/StepIndicator';
 import LanguageSelector from '../component/createbot/LanguageSelector';
 import FileUploader from '../component/createbot/FileUploader';
+import CommandInput from '../component/createbot/CommandInput';
 import EnvVarEditor from '../component/createbot/EnvVarEditor';
 import DeploymentSummary from '../component/createbot/DeploymentSummary';
 import { botService, type EnvVar } from '../services/botService';
@@ -20,9 +21,10 @@ export default function CreateBot() {
   const [language, setLanguage] = useState('nodejs');
   const [version, setVersion] = useState('LTS');
   const [zipFile, setZipFile] = useState<File | null>(null);
+  const [startCommand, setStartCommand] = useState('');
   const [envVars, setEnvVars] = useState<EnvVar[]>([]);
 
-  const steps = ['Configuration', 'Fichiers', 'Variables', 'Récapitulatif'];
+  const steps = ['Configuration', 'Fichiers', 'Commande', 'Variables', 'Récapitulatif'];
 
   const handleNext = () => {
     if (currentStep === 1 && !name.trim()) {
@@ -50,6 +52,7 @@ export default function CreateBot() {
         language,
         version,
         zipFile,
+        startCommand: startCommand.trim() || undefined,
         envVars: validEnvVars,
       });
 
@@ -89,9 +92,12 @@ export default function CreateBot() {
         return <FileUploader zipFile={zipFile} onFileChange={setZipFile} />;
 
       case 3:
-        return <EnvVarEditor envVars={envVars} onEnvVarsChange={setEnvVars} />;
+        return <CommandInput command={startCommand} onCommandChange={setStartCommand} />;
 
       case 4:
+        return <EnvVarEditor envVars={envVars} onEnvVarsChange={setEnvVars} />;
+
+      case 5:
         return (
           <DeploymentSummary
             name={name}
