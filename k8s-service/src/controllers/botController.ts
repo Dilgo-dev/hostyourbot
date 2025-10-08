@@ -1,6 +1,7 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { BotDeploymentService } from '../services/botDeploymentService';
 import { BotScaleRequest, EnvVar } from '../types/bot';
+import { getDockerImage } from '../utils/dockerImageMapper';
 
 const botService = new BotDeploymentService();
 
@@ -44,7 +45,7 @@ export const deployBot = async (
       language: fields.language,
       version: fields.version,
       env: envVars,
-      image: `${fields.language}:${fields.version}`,
+      image: getDockerImage(fields.language, fields.version),
     });
 
     reply.status(201).send(bot);
