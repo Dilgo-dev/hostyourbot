@@ -1,9 +1,10 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const AUTH_API_URL = import.meta.env.VITE_AUTH_API_URL || 'http://localhost:3001';
+const K8S_API_URL = import.meta.env.VITE_K8S_API_URL || 'http://localhost:3003';
 
-export const api = axios.create({
-  baseURL: API_URL,
+export const authApi = axios.create({
+  baseURL: AUTH_API_URL,
   timeout: 30000,
   withCredentials: true,
   headers: {
@@ -11,7 +12,27 @@ export const api = axios.create({
   },
 });
 
-api.interceptors.response.use(
+export const k8sApi = axios.create({
+  baseURL: K8S_API_URL,
+  timeout: 30000,
+  withCredentials: true,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+authApi.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
+k8sApi.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {

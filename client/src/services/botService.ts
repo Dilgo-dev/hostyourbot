@@ -1,4 +1,4 @@
-import { api } from './api';
+import { k8sApi } from './api';
 
 export interface Bot {
   id: string;
@@ -34,12 +34,12 @@ export interface BotStats {
 
 export const botService = {
   async getBots(): Promise<Bot[]> {
-    const response = await api.get<{ bots: Bot[] }>('/api/bots');
+    const response = await k8sApi.get<{ bots: Bot[] }>('/api/v1/bots');
     return response.data.bots;
   },
 
   async getBot(id: string): Promise<Bot> {
-    const response = await api.get<{ bot: Bot }>(`/api/bots/${id}`);
+    const response = await k8sApi.get<{ bot: Bot }>(`/api/v1/bots/${id}`);
     return response.data.bot;
   },
 
@@ -56,7 +56,7 @@ export const botService = {
 
     formData.append('envVars', JSON.stringify(data.envVars));
 
-    const response = await api.post<{ bot: Bot }>('/api/bots', formData, {
+    const response = await k8sApi.post<{ bot: Bot }>('/api/v1/bots', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -66,36 +66,36 @@ export const botService = {
   },
 
   async updateBot(id: string, data: Partial<CreateBotRequest>): Promise<Bot> {
-    const response = await api.patch<{ bot: Bot }>(`/api/bots/${id}`, data);
+    const response = await k8sApi.patch<{ bot: Bot }>(`/api/v1/bots/${id}`, data);
     return response.data.bot;
   },
 
   async deleteBot(id: string): Promise<void> {
-    await api.delete(`/api/bots/${id}`);
+    await k8sApi.delete(`/api/v1/bots/${id}`);
   },
 
   async startBot(id: string): Promise<Bot> {
-    const response = await api.post<{ bot: Bot }>(`/api/bots/${id}/start`);
+    const response = await k8sApi.post<{ bot: Bot }>(`/api/v1/bots/${id}/start`);
     return response.data.bot;
   },
 
   async stopBot(id: string): Promise<Bot> {
-    const response = await api.post<{ bot: Bot }>(`/api/bots/${id}/stop`);
+    const response = await k8sApi.post<{ bot: Bot }>(`/api/v1/bots/${id}/stop`);
     return response.data.bot;
   },
 
   async restartBot(id: string): Promise<Bot> {
-    const response = await api.post<{ bot: Bot }>(`/api/bots/${id}/restart`);
+    const response = await k8sApi.post<{ bot: Bot }>(`/api/v1/bots/${id}/restart`);
     return response.data.bot;
   },
 
   async getStats(): Promise<BotStats> {
-    const response = await api.get<BotStats>('/api/bots/stats');
+    const response = await k8sApi.get<BotStats>('/api/v1/bots/stats');
     return response.data;
   },
 
   async getLogs(id: string, lines: number = 100): Promise<string[]> {
-    const response = await api.get<{ logs: string[] }>(`/api/bots/${id}/logs?lines=${lines}`);
+    const response = await k8sApi.get<{ logs: string[] }>(`/api/v1/bots/${id}/logs?lines=${lines}`);
     return response.data.logs;
   },
 };
