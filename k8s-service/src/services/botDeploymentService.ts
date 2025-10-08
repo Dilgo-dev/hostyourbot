@@ -46,9 +46,19 @@ export class BotDeploymentService {
           'apk add --no-cache unzip && ' +
           'echo "Checking /zip content..." && ' +
           'ls -la /zip && ' +
-          'echo "Unzipping bot.zip..." && ' +
-          'unzip -o /zip/bot.zip -d /app && ' +
-          'echo "Checking /app content..." && ' +
+          'echo "Unzipping bot.zip to /tmp..." && ' +
+          'unzip -o /zip/bot.zip -d /tmp && ' +
+          'echo "Checking /tmp content..." && ' +
+          'ls -la /tmp && ' +
+          'echo "Moving files to /app..." && ' +
+          'if [ $(ls -A /tmp | wc -l) -eq 1 ] && [ -d "/tmp/$(ls /tmp)" ]; then ' +
+          '  echo "Single directory detected, moving contents up one level..."; ' +
+          '  mv /tmp/*/* /app/ && rm -rf /tmp/*; ' +
+          'else ' +
+          '  echo "Multiple files/directories detected, moving all to /app..."; ' +
+          '  mv /tmp/* /app/; ' +
+          'fi && ' +
+          'echo "Checking final /app content..." && ' +
           'ls -la /app && ' +
           'chmod -R 755 /app && ' +
           'echo "Init container completed successfully!"'
