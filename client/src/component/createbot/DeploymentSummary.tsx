@@ -1,4 +1,4 @@
-import { FaNodeJs, FaPython, FaFileArchive, FaKey } from 'react-icons/fa';
+import { FaNodeJs, FaPython, FaFileArchive, FaKey, FaTerminal } from 'react-icons/fa';
 import { SiGo, SiRust } from 'react-icons/si';
 import type { EnvVar } from '../../services/botService';
 
@@ -7,6 +7,7 @@ interface DeploymentSummaryProps {
   language: string;
   version: string;
   zipFile: File | null;
+  startCommand?: string;
   envVars: EnvVar[];
 }
 
@@ -15,6 +16,7 @@ export default function DeploymentSummary({
   language,
   version,
   zipFile,
+  startCommand,
   envVars,
 }: DeploymentSummaryProps) {
   const getLanguageIcon = () => {
@@ -99,6 +101,18 @@ export default function DeploymentSummary({
             <p className="text-slate-500 text-sm">Aucun fichier</p>
           )}
         </div>
+
+        {startCommand && (
+          <div className="border-t border-slate-700 pt-6">
+            <div className="flex items-center gap-2 mb-3">
+              <FaTerminal className="text-slate-400" />
+              <p className="text-slate-400 text-sm">Commande de démarrage</p>
+            </div>
+            <div className="bg-slate-800 rounded-lg p-4">
+              <p className="text-purple-400 font-mono text-sm">{startCommand}</p>
+            </div>
+          </div>
+        )}
 
         <div className="border-t border-slate-700 pt-6">
           <div className="flex items-center gap-2 mb-3">

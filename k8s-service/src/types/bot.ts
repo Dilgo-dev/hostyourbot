@@ -24,6 +24,7 @@ export interface BotConfig {
   version: string;
   image: string;
   startCommand?: string;
+  zipFileBase64?: string;
   env?: EnvVar[];
   port?: number;
 }

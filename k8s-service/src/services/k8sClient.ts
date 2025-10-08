@@ -6,6 +6,7 @@ import {
   Deployment,
   Service,
   Namespace,
+  ConfigMap,
   K8sList,
   K8sResource,
 } from '../types/k8s';
@@ -130,6 +131,20 @@ export class K8sClient {
     const params = tailLines ? { tailLines: tailLines.toString() } : {};
     const response = await this.client.get(`/api/v1/namespaces/${namespace}/pods/${name}/log`, { params });
     return response.data;
+  }
+
+  async createConfigMap(configMap: ConfigMap, namespace: string = 'default'): Promise<ConfigMap> {
+    const response = await this.client.post(`/api/v1/namespaces/${namespace}/configmaps`, configMap);
+    return response.data;
+  }
+
+  async getConfigMap(name: string, namespace: string = 'default'): Promise<ConfigMap> {
+    const response = await this.client.get(`/api/v1/namespaces/${namespace}/configmaps/${name}`);
+    return response.data;
+  }
+
+  async deleteConfigMap(name: string, namespace: string = 'default'): Promise<void> {
+    await this.client.delete(`/api/v1/namespaces/${namespace}/configmaps/${name}`);
   }
 
   async healthCheck(): Promise<boolean> {

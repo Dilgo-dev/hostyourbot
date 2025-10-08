@@ -1,5 +1,5 @@
 import { K8sClient } from './k8sClient';
-import { Deployment, Container, Service } from '../types/k8s';
+import { Deployment, Container, Service, ConfigMap, Volume, VolumeMount } from '../types/k8s';
 import { Bot, BotConfig, BotStatus, BotType } from '../types/bot';
 
 export class BotDeploymentService {
@@ -22,6 +22,54 @@ export class BotDeploymentService {
       'managed-by': 'hostyourbot',
     };
 
+    const volumes: Volume[] = [];
+    const initContainers: Container[] = [];
+
+    if (config.zipFileBase64) {
+      volumes.push({
+        name: 'bot-code',
+        emptyDir: {},
+      });
+      volumes.push({
+        name: 'bot-zip',
+        configMap: {
+          name: `${botId}-code`,
+        },
+      });
+
+      initContainers.push({
+        name: 'unzip-code',
+        image: 'alpine:latest',
+        command: ['sh', '-c'],
+        args: [
+          'echo "Installing unzip..." && ' +
+          'apk add --no-cache unzip && ' +
+          'echo "Checking /zip content..." && ' +
+          'ls -la /zip && ' +
+          'echo "Unzipping bot.zip to /tmp..." && ' +
+          'unzip -o /zip/bot.zip -d /tmp && ' +
+          'echo "Checking /tmp content..." && ' +
+          'ls -la /tmp && ' +
+          'echo "Moving files to /app..." && ' +
+          'if [ $(ls -A /tmp | wc -l) -eq 1 ] && [ -d "/tmp/$(ls /tmp)" ]; then ' +
+          '  echo "Single directory detected, moving contents up one level..."; ' +
+          '  mv /tmp/*/* /app/ && rm -rf /tmp/*; ' +
+          'else ' +
+          '  echo "Multiple files/directories detected, moving all to /app..."; ' +
+          '  mv /tmp/* /app/; ' +
+          'fi && ' +
+          'echo "Checking final /app content..." && ' +
+          'ls -la /app && ' +
+          'chmod -R 755 /app && ' +
+          'echo "Init container completed successfully!"'
+        ],
+        volumeMounts: [
+          { name: 'bot-zip', mountPath: '/zip', readOnly: true },
+          { name: 'bot-code', mountPath: '/app' },
+        ],
+      });
+    }
+
     const container: Container = {
       name: botId,
       image: config.image,
@@ -30,12 +78,18 @@ export class BotDeploymentService {
         : [],
     };
 
+    if (config.zipFileBase64) {
+      container.volumeMounts = [
+        { name: 'bot-code', mountPath: '/app' },
+      ];
+      container.env = container.env || [];
+      container.env.push({ name: 'WORKDIR', value: '/app' });
+    }
+
     if (config.startCommand) {
       const commandParts = config.startCommand.trim().split(/\s+/);
-      container.command = [commandParts[0]];
-      if (commandParts.length > 1) {
-        container.args = commandParts.slice(1);
-      }
+      container.command = ['sh', '-c'];
+      container.args = [`cd /app && npm install && ${config.startCommand}`];
     } else {
       container.command = ['tail'];
       container.args = ['-f', '/dev/null'];
@@ -64,6 +118,8 @@ export class BotDeploymentService {
           },
           spec: {
             containers: [container],
+            initContainers: initContainers.length > 0 ? initContainers : undefined,
+            volumes: volumes.length > 0 ? volumes : undefined,
           },
         },
       },
@@ -142,6 +198,26 @@ export class BotDeploymentService {
 
     const botId = this.generateBotId(config.name);
 
+    if (config.zipFileBase64) {
+      const configMap: ConfigMap = {
+        apiVersion: 'v1',
+        kind: 'ConfigMap',
+        metadata: {
+          name: `${botId}-code`,
+          namespace: this.baseNamespace,
+          labels: {
+            app: botId,
+            'managed-by': 'hostyourbot',
+          },
+        },
+        binaryData: {
+          'bot.zip': config.zipFileBase64,
+        },
+      };
+
+      await this.k8sClient.createConfigMap(configMap, this.baseNamespace);
+    }
+
     const deploymentManifest = this.createDeploymentManifest(botId, config);
     const deployment = await this.k8sClient.createDeployment(
       deploymentManifest,
@@ -182,6 +258,11 @@ export class BotDeploymentService {
 
     try {
       await this.k8sClient.deleteService(botId, this.baseNamespace);
+    } catch {
+    }
+
+    try {
+      await this.k8sClient.deleteConfigMap(`${botId}-code`, this.baseNamespace);
     } catch {
     }
   }
