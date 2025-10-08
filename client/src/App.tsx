@@ -5,6 +5,7 @@ import Home from "./page/Home";
 import Register from "./page/Register";
 import Login from "./page/Login";
 import Dashboard from "./page/Dashboard";
+import CreateBot from "./page/CreateBot";
 import NotFound from "./page/NotFound";
 
 const router = createBrowserRouter([
@@ -33,6 +34,10 @@ const router = createBrowserRouter([
   {
     path: "/dashboard",
     element: <Dashboard />,
+  },
+  {
+    path: "/dashboard/create",
+    element: <CreateBot />,
   },
 ]);
 
