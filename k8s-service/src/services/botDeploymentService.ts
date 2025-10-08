@@ -20,6 +20,7 @@ export class BotDeploymentService {
       'bot-language': config.language,
       'bot-version': config.version,
       'managed-by': 'hostyourbot',
+      'user-id': config.userId || 'unknown',
     };
 
     const volumes: Volume[] = [];
@@ -305,5 +306,24 @@ export class BotDeploymentService {
 
     const podName = botPods[0].metadata.name;
     return this.k8sClient.getPodLogs(podName, this.baseNamespace, tailLines);
+  }
+
+  async deleteUserBots(userId: string): Promise<void> {
+    try {
+      const deploymentsList = await this.k8sClient.listDeployments(this.baseNamespace);
+      const userBots = deploymentsList.items.filter(
+        (d) => d.metadata.labels?.['user-id'] === userId && d.metadata.labels?.['managed-by'] === 'hostyourbot'
+      );
+
+      for (const deployment of userBots) {
+        const botId = deployment.metadata.name;
+        await this.deleteBot(botId);
+      }
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        return;
+      }
+      throw error;
+    }
   }
 }

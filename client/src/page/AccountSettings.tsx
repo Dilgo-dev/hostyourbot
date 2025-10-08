@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { FaUser, FaLock, FaExclamationTriangle, FaSave } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import DashboardLayout from '../component/dashboard/DashboardLayout';
+import DeleteAccountModal from '../component/settings/DeleteAccountModal';
 import { accountService } from '../services/accountService';
 
 export default function AccountSettings() {
@@ -16,6 +17,7 @@ export default function AccountSettings() {
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,24 +46,9 @@ export default function AccountSettings() {
   };
 
   const handleDeleteAccount = async () => {
-    const confirmText = 'supprimer';
-    const userInput = prompt(
-      `Cette action est irréversible. Tous vos bots seront supprimés.\n\nPour confirmer, tapez "${confirmText}" :`
-    );
-
-    if (userInput !== confirmText) {
-      return;
-    }
-
-    try {
-      setLoading(true);
-      await accountService.deleteAccount();
-      await logout();
-      navigate('/');
-    } catch (error: any) {
-      setMessage({ type: 'error', text: error.response?.data?.error || 'Erreur lors de la suppression du compte' });
-      setLoading(false);
-    }
+    await accountService.deleteAccount();
+    await logout();
+    navigate('/');
   };
 
   const formatDate = (dateString: string) => {
@@ -208,7 +195,7 @@ export default function AccountSettings() {
             </p>
 
             <button
-              onClick={handleDeleteAccount}
+              onClick={() => setShowDeleteModal(true)}
               disabled={loading}
               className="flex items-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all duration-200 hover:shadow-lg hover:shadow-red-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -218,6 +205,13 @@ export default function AccountSettings() {
           </motion.section>
         </div>
       </motion.div>
+
+      <DeleteAccountModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDeleteAccount}
+        userEmail={user?.email || ''}
+      />
     </DashboardLayout>
   );
 }

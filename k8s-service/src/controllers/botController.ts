@@ -51,6 +51,7 @@ export const deployBot = async (
       version: fields.version,
       env: envVars,
       image: getDockerImage(fields.language, fields.version),
+      userId: fields.userId,
       startCommand: fields.startCommand,
       zipFileBase64,
     });
@@ -155,5 +156,17 @@ export const getBotLogs = async (
     reply.send({ logs });
   } catch (error: any) {
     reply.status(404).send({ error: 'Failed to get bot logs', message: error.message });
+  }
+};
+
+export const deleteUserBots = async (
+  request: FastifyRequest<{ Params: { userId: string } }>,
+  reply: FastifyReply
+) => {
+  try {
+    await botService.deleteUserBots(request.params.userId);
+    reply.status(204).send();
+  } catch (error: any) {
+    reply.status(400).send({ error: 'Failed to delete user bots', message: error.message });
   }
 };

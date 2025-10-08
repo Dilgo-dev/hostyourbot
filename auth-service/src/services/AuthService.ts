@@ -85,4 +85,40 @@ export class AuthService {
       throw new Error('Invalid token');
     }
   }
+
+  async updatePassword(userId: string, oldPassword: string, newPassword: string): Promise<void> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const isValidPassword = await user.validatePassword(oldPassword);
+
+    if (!isValidPassword) {
+      throw new Error('Invalid current password');
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+
+    await this.userRepository.save(user);
+  }
+
+  async deleteAccount(userId: string): Promise<void> {
+    const axios = require('axios');
+
+    const k8sServiceUrl = process.env.K8S_SERVICE_URL || 'http://k8s-service:3002';
+
+    try {
+      await axios.delete(`${k8sServiceUrl}/api/v1/bots/user/${userId}`);
+    } catch (error: any) {
+      console.error('Erreur lors de la suppression des bots:', error.message);
+      if (error.response?.status !== 404) {
+        throw new Error('Failed to delete user bots');
+      }
+    }
+
+    await this.userRepository.delete({ id: userId });
+  }
 }

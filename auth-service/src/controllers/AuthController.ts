@@ -110,4 +110,47 @@ export class AuthController {
 
     res.status(200).json({ message: 'Logout successful' });
   };
+
+  updatePassword = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const userId = (req as any).userId;
+      const { oldPassword, newPassword } = req.body;
+
+      if (!oldPassword || !newPassword) {
+        res.status(400).json({ error: 'Missing required fields' });
+        return;
+      }
+
+      if (newPassword.length < 8) {
+        res.status(400).json({ error: 'Password must be at least 8 characters long' });
+        return;
+      }
+
+      await this.authService.updatePassword(userId, oldPassword, newPassword);
+
+      await logInfo('Mot de passe mis à jour', { userId });
+
+      res.status(200).json({ message: 'Password updated successfully' });
+    } catch (error) {
+      await logError('Échec de la mise à jour du mot de passe', { error: (error as Error).message });
+      res.status(400).json({ error: (error as Error).message });
+    }
+  };
+
+  deleteAccount = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const userId = (req as any).userId;
+
+      await this.authService.deleteAccount(userId);
+
+      res.clearCookie('token', { path: '/' });
+
+      await logInfo('Compte supprimé', { userId });
+
+      res.status(200).json({ message: 'Account deleted successfully' });
+    } catch (error) {
+      await logError('Échec de la suppression du compte', { error: (error as Error).message });
+      res.status(500).json({ error: (error as Error).message });
+    }
+  };
 }

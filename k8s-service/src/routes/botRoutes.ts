@@ -4,6 +4,7 @@ import {
   listBots,
   getBot,
   deleteBot,
+  deleteUserBots,
   scaleBot,
   stopBot,
   startBot,
@@ -16,6 +17,7 @@ export default async function botRoutes(fastify: FastifyInstance) {
   fastify.get('/bots', listBots);
   fastify.get('/bots/:id', getBot);
   fastify.delete('/bots/:id', deleteBot);
+  fastify.delete('/bots/user/:userId', deleteUserBots);
   fastify.post('/bots/:id/scale', scaleBot);
   fastify.post('/bots/:id/stop', stopBot);
   fastify.post('/bots/:id/start', startBot);
