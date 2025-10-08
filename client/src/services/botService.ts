@@ -44,7 +44,24 @@ export const botService = {
   },
 
   async createBot(data: CreateBotRequest): Promise<Bot> {
-    const response = await api.post<{ bot: Bot }>('/api/bots', data);
+    const formData = new FormData();
+
+    formData.append('name', data.name);
+    formData.append('language', data.language);
+    formData.append('version', data.version);
+
+    if (data.zipFile) {
+      formData.append('zipFile', data.zipFile);
+    }
+
+    formData.append('envVars', JSON.stringify(data.envVars));
+
+    const response = await api.post<{ bot: Bot }>('/api/bots', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
     return response.data.bot;
   },
 
