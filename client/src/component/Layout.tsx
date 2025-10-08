@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FaRocket } from 'react-icons/fa';
+import { useAuth } from '../context/AuthContext';
 
 export default function Layout() {
   const [scrolled, setScrolled] = useState(false);
+  const { user } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -57,18 +59,29 @@ export default function Layout() {
             </div>
 
             <div className="flex items-center gap-4">
-              <Link
-                to="/login"
-                className="hidden sm:block text-slate-300 hover:text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200"
-              >
-                Connexion
-              </Link>
-              <Link
-                to="/register"
-                className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg font-semibold transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/50"
-              >
-                Démarrer
-              </Link>
+              {user ? (
+                <Link
+                  to="/dashboard"
+                  className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg font-semibold transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/50"
+                >
+                  Aller au Dashboard
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    className="hidden sm:block text-slate-300 hover:text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200"
+                  >
+                    Connexion
+                  </Link>
+                  <Link
+                    to="/register"
+                    className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg font-semibold transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/50"
+                  >
+                    Démarrer
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
