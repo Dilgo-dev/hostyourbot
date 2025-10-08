@@ -46,6 +46,7 @@ export const deployBot = async (
       version: fields.version,
       env: envVars,
       image: getDockerImage(fields.language, fields.version),
+      startCommand: fields.startCommand,
     });
 
     reply.status(201).send(bot);

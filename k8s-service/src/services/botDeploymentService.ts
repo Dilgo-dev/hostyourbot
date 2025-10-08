@@ -30,6 +30,17 @@ export class BotDeploymentService {
         : [],
     };
 
+    if (config.startCommand) {
+      const commandParts = config.startCommand.trim().split(/\s+/);
+      container.command = [commandParts[0]];
+      if (commandParts.length > 1) {
+        container.args = commandParts.slice(1);
+      }
+    } else {
+      container.command = ['tail'];
+      container.args = ['-f', '/dev/null'];
+    }
+
     if (config.port) {
       container.ports = [{ containerPort: config.port }];
     }

@@ -23,6 +23,7 @@ export interface BotConfig {
   language: string;
   version: string;
   image: string;
+  startCommand?: string;
   env?: EnvVar[];
   port?: number;
 }

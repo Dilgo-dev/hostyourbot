@@ -22,6 +22,7 @@ export interface CreateBotRequest {
   version: string;
   zipFile: File | null;
   envVars: EnvVar[];
+  startCommand?: string;
 }
 
 export interface BotStats {
@@ -52,6 +53,10 @@ export const botService = {
 
     if (data.zipFile) {
       formData.append('zipFile', data.zipFile);
+    }
+
+    if (data.startCommand) {
+      formData.append('startCommand', data.startCommand);
     }
 
     formData.append('envVars', JSON.stringify(data.envVars));
