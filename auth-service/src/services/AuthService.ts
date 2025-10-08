@@ -1,6 +1,7 @@
 import { Repository } from 'typeorm';
 import jwt from 'jsonwebtoken';
 import * as bcrypt from 'bcrypt';
+import axios from 'axios';
 import { User } from '../entities/User';
 import { AppDataSource } from '../config/database';
 
@@ -106,8 +107,6 @@ export class AuthService {
   }
 
   async deleteAccount(userId: string): Promise<void> {
-    const axios = require('axios');
-
     const k8sServiceUrl = process.env.K8S_SERVICE_URL || 'http://k8s-service:3002';
 
     try {
