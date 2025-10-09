@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FaUser, FaLock, FaExclamationTriangle, FaEnvelope, FaShieldAlt } from 'react-icons/fa';
+import { FaUser, FaLock, FaExclamationTriangle, FaEnvelope, FaShieldAlt, FaDiscord } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import DashboardLayout from '../component/dashboard/DashboardLayout';
 import DeleteAccountModal from '../component/settings/DeleteAccountModal';
@@ -54,6 +54,10 @@ export default function AccountSettings() {
       month: 'long',
       day: 'numeric',
     });
+  };
+
+  const getDiscordAvatarUrl = (discordId: string, discordAvatar: string) => {
+    return `https://cdn.discordapp.com/avatars/${discordId}/${discordAvatar}.png?size=256`;
   };
 
   const handle2FASuccess = async () => {
@@ -130,10 +134,34 @@ export default function AccountSettings() {
             </div>
 
             <div className="space-y-4">
+              {user?.discordId && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-400 mb-2">Compte Discord</label>
+                  <div className="px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg">
+                    <div className="flex items-center gap-4">
+                      {user.discordAvatar && (
+                        <img
+                          src={getDiscordAvatarUrl(user.discordId, user.discordAvatar)}
+                          alt="Avatar Discord"
+                          className="w-16 h-16 rounded-full"
+                        />
+                      )}
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <FaDiscord className="text-indigo-400 text-lg" />
+                          <p className="text-white font-medium">{user.discordUsername}</p>
+                        </div>
+                        <p className="text-slate-400 text-sm mt-1">Connecté via Discord</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div>
                 <label className="block text-sm font-medium text-slate-400 mb-2">Adresse email</label>
                 <div className="px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white">
-                  {user?.email}
+                  {user?.email || 'Non renseigné'}
                 </div>
               </div>
 
