@@ -8,7 +8,8 @@ import {
   FaChevronRight,
   FaUser,
   FaCircle,
-  FaCog
+  FaCog,
+  FaUserShield
 } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
 import { botService, type Bot } from '../../services/botService';
@@ -153,6 +154,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   )}
                 </div>
               </div>
+              {user?.role === 'admin' && (
+                <button
+                  onClick={() => navigate('/dashboard/admin')}
+                  className="w-full flex items-center gap-3 px-3 py-2 text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 rounded-lg transition-all duration-200 mb-2"
+                >
+                  <FaUserShield className="text-lg" />
+                  <span className="font-medium text-sm">Dashboard Admin</span>
+                </button>
+              )}
               <button
                 onClick={() => navigate('/dashboard/settings')}
                 className="w-full flex items-center gap-3 px-3 py-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-all duration-200 mb-2"
@@ -170,6 +180,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             </>
           ) : (
             <>
+              {user?.role === 'admin' && (
+                <button
+                  onClick={() => navigate('/dashboard/admin')}
+                  className="w-10 h-10 flex items-center justify-center text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 rounded-lg transition-all duration-200 mx-auto mb-2"
+                  title="Dashboard Admin"
+                >
+                  <FaUserShield className="text-lg" />
+                </button>
+              )}
               <button
                 onClick={() => navigate('/dashboard/settings')}
                 className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-all duration-200 mx-auto mb-2"

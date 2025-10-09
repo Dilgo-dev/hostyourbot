@@ -10,6 +10,7 @@ import Dashboard from "./page/Dashboard";
 import CreateBot from "./page/CreateBot";
 import BotDetail from "./page/BotDetail";
 import AccountSettings from "./page/AccountSettings";
+import AdminDashboard from "./page/AdminDashboard";
 import NotFound from "./page/NotFound";
 
 const router = createBrowserRouter([
@@ -58,6 +59,10 @@ const router = createBrowserRouter([
   {
     path: "/dashboard/settings",
     element: <AccountSettings />,
+  },
+  {
+    path: "/dashboard/admin",
+    element: <AdminDashboard />,
   },
 ]);
 
