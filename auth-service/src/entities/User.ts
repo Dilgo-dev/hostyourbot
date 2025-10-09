@@ -21,6 +21,12 @@ export class User {
   @MinLength(8)
   password: string;
 
+  @Column({ nullable: true })
+  resetPasswordToken: string | null;
+
+  @Column({ type: 'timestamp', nullable: true })
+  resetPasswordExpires: Date | null;
+
   @CreateDateColumn()
   createdAt: Date;
 

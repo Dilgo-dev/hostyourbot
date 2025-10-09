@@ -30,7 +30,19 @@ export default function ForgotPassword() {
     setIsSubmitting(true);
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const response = await fetch('http://localhost:3001/api/auth/forgot-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to send reset email');
+      }
+
       setEmailSent(true);
     } catch (err) {
       setError("Une erreur est survenue. Veuillez réessayer.");

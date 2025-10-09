@@ -153,4 +153,49 @@ export class AuthController {
       res.status(500).json({ error: (error as Error).message });
     }
   };
+
+  forgotPassword = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        res.status(400).json({ error: 'Email is required' });
+        return;
+      }
+
+      await this.authService.requestPasswordReset(email);
+
+      await logInfo('Demande de réinitialisation de mot de passe', { email });
+
+      res.status(200).json({ message: 'Password reset email sent if account exists' });
+    } catch (error) {
+      await logError('Échec de la demande de réinitialisation', { error: (error as Error).message });
+      res.status(500).json({ error: 'An error occurred' });
+    }
+  };
+
+  resetPassword = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { token, newPassword } = req.body;
+
+      if (!token || !newPassword) {
+        res.status(400).json({ error: 'Token and new password are required' });
+        return;
+      }
+
+      if (newPassword.length < 8) {
+        res.status(400).json({ error: 'Password must be at least 8 characters long' });
+        return;
+      }
+
+      await this.authService.resetPassword(token, newPassword);
+
+      await logInfo('Mot de passe réinitialisé avec succès');
+
+      res.status(200).json({ message: 'Password reset successfully' });
+    } catch (error) {
+      await logError('Échec de la réinitialisation du mot de passe', { error: (error as Error).message });
+      res.status(400).json({ error: (error as Error).message });
+    }
+  };
 }
