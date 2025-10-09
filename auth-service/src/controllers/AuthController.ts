@@ -233,102 +233,64 @@ export class AuthController {
     }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-      color: #ffffff;
+      background: #ffffff;
+      color: #000000;
       padding: 40px 20px;
-      min-height: 100vh;
+      line-height: 1.6;
     }
     .container {
       max-width: 800px;
       margin: 0 auto;
-      background: #1e293b;
-      border-radius: 16px;
-      border: 1px solid #9333ea;
-      box-shadow: 0 20px 50px rgba(147, 51, 234, 0.1);
-      overflow: hidden;
     }
     .header {
-      background: linear-gradient(135deg, #7c3aed 0%, #9333ea 100%);
-      padding: 40px;
-      text-align: center;
+      margin-bottom: 40px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid #e5e7eb;
     }
     .header h1 {
-      font-size: 32px;
-      font-weight: 700;
-      margin-bottom: 10px;
+      font-size: 28px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #111827;
     }
     .header p {
-      color: #e9d5ff;
+      color: #6b7280;
       font-size: 14px;
-    }
-    .content {
-      padding: 40px;
     }
     .section {
       margin-bottom: 32px;
-      background: #0f172a;
-      border: 1px solid #334155;
-      border-radius: 12px;
-      padding: 24px;
     }
     .section h2 {
-      color: #a78bfa;
-      font-size: 20px;
+      font-size: 18px;
       font-weight: 600;
-      margin-bottom: 20px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .section h2::before {
-      content: "▸";
-      color: #9333ea;
-      font-size: 24px;
+      color: #374151;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #e5e7eb;
     }
     .field {
-      margin-bottom: 16px;
-      padding: 12px;
-      background: #1e293b;
-      border-radius: 8px;
-      border-left: 3px solid #9333ea;
-    }
-    .field:last-child {
-      margin-bottom: 0;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: baseline;
     }
     .field-label {
-      color: #94a3b8;
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 4px;
+      color: #6b7280;
+      font-size: 14px;
+      min-width: 200px;
+      font-weight: 500;
     }
     .field-value {
-      color: #ffffff;
-      font-size: 16px;
-      font-weight: 500;
+      color: #111827;
+      font-size: 14px;
       word-break: break-all;
     }
-    .badge {
-      display: inline-block;
-      padding: 6px 12px;
-      border-radius: 6px;
-      font-size: 14px;
-      font-weight: 600;
-    }
-    .badge-success {
-      background: #065f46;
-      color: #6ee7b7;
-    }
-    .badge-danger {
-      background: #7f1d1d;
-      color: #fca5a5;
-    }
     .footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #e5e7eb;
       text-align: center;
-      padding: 20px;
-      color: #64748b;
-      font-size: 14px;
-      border-top: 1px solid #334155;
+      color: #9ca3af;
+      font-size: 12px;
     }
   </style>
 </head>
@@ -338,61 +300,57 @@ export class AuthController {
       <h1>HostYourBot</h1>
       <p>Export de vos données personnelles</p>
     </div>
-    <div class="content">
-      <div class="section">
-        <h2>Profil</h2>
-        <div class="field">
-          <div class="field-label">Identifiant</div>
-          <div class="field-value">${userData.id}</div>
-        </div>
-        <div class="field">
-          <div class="field-label">Email</div>
-          <div class="field-value">${userData.email || 'Non renseigné'}</div>
-        </div>
-      </div>
 
-      <div class="section">
-        <h2>Discord</h2>
-        <div class="field">
-          <div class="field-label">Discord ID</div>
-          <div class="field-value">${userData.discordId || 'Non connecté'}</div>
-        </div>
-        <div class="field">
-          <div class="field-label">Nom d'utilisateur Discord</div>
-          <div class="field-value">${userData.discordUsername || 'Non connecté'}</div>
-        </div>
-        ${userData.discordAvatar ? `
-        <div class="field">
-          <div class="field-label">Avatar Discord</div>
-          <div class="field-value">${userData.discordAvatar}</div>
-        </div>
-        ` : ''}
+    <div class="section">
+      <h2>Profil</h2>
+      <div class="field">
+        <div class="field-label">Identifiant :</div>
+        <div class="field-value">${userData.id}</div>
       </div>
-
-      <div class="section">
-        <h2>Sécurité</h2>
-        <div class="field">
-          <div class="field-label">Double authentification (2FA)</div>
-          <div class="field-value">
-            <span class="badge ${userData.twoFactorEnabled ? 'badge-success' : 'badge-danger'}">
-              ${userData.twoFactorEnabled ? 'Activée' : 'Désactivée'}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <div class="section">
-        <h2>Dates</h2>
-        <div class="field">
-          <div class="field-label">Compte créé le</div>
-          <div class="field-value">${formatDate(userData.createdAt)}</div>
-        </div>
-        <div class="field">
-          <div class="field-label">Dernière modification</div>
-          <div class="field-value">${formatDate(userData.updatedAt)}</div>
-        </div>
+      <div class="field">
+        <div class="field-label">Email :</div>
+        <div class="field-value">${userData.email || 'Non renseigné'}</div>
       </div>
     </div>
+
+    <div class="section">
+      <h2>Discord</h2>
+      <div class="field">
+        <div class="field-label">Discord ID :</div>
+        <div class="field-value">${userData.discordId || 'Non connecté'}</div>
+      </div>
+      <div class="field">
+        <div class="field-label">Nom d'utilisateur Discord :</div>
+        <div class="field-value">${userData.discordUsername || 'Non connecté'}</div>
+      </div>
+      ${userData.discordAvatar ? `
+      <div class="field">
+        <div class="field-label">Avatar Discord :</div>
+        <div class="field-value">${userData.discordAvatar}</div>
+      </div>
+      ` : ''}
+    </div>
+
+    <div class="section">
+      <h2>Sécurité</h2>
+      <div class="field">
+        <div class="field-label">Double authentification (2FA) :</div>
+        <div class="field-value">${userData.twoFactorEnabled ? 'Activée' : 'Désactivée'}</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Dates</h2>
+      <div class="field">
+        <div class="field-label">Compte créé le :</div>
+        <div class="field-value">${formatDate(userData.createdAt)}</div>
+      </div>
+      <div class="field">
+        <div class="field-label">Dernière modification :</div>
+        <div class="field-value">${formatDate(userData.updatedAt)}</div>
+      </div>
+    </div>
+
     <div class="footer">
       Document généré le ${formatDate(new Date())}
     </div>
