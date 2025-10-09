@@ -115,7 +115,7 @@ export default function Login() {
                     Mot de passe
                   </label>
                   <Link
-                    to="/forgot-password"
+                    to={`/forgot-password?email=${encodeURIComponent(formData.email)}`}
                     className="text-sm text-purple-400 hover:text-purple-300 transition-colors"
                   >
                     Mot de passe oublié ?
