@@ -56,12 +56,23 @@ export class AuthController {
         return;
       }
 
-      const { user, token } = await this.authService.login(email, password);
+      const { user, token, requires2FA, tempToken } = await this.authService.login(email, password);
 
       const userResponse = { ...user };
       delete (userResponse as any).password;
 
-      res.cookie('token', token, {
+      if (requires2FA && tempToken) {
+        await logInfo('Connexion réussie - 2FA requis', { userId: user.id, email: user.email });
+        res.status(200).json({
+          message: 'Two-factor authentication required',
+          requires2FA: true,
+          tempToken,
+          user: userResponse,
+        });
+        return;
+      }
+
+      res.cookie('token', token!, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',

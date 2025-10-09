@@ -6,9 +6,11 @@ interface AuthContextType {
   loading: boolean;
   error: string | null;
   register: (email: string, password: string) => Promise<void>;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<{ requires2FA?: boolean; tempToken?: string }>;
+  verify2FA: (tempToken: string, code: string) => Promise<void>;
   logout: () => Promise<void>;
   clearError: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -72,8 +74,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setError(null);
       setLoading(true);
       const response = await authService.login(email, password);
+
+      if (response.requires2FA && response.tempToken) {
+        return { requires2FA: true, tempToken: response.tempToken };
+      }
+
       setUser(response.user);
       localStorage.setItem('user', JSON.stringify(response.user));
+      return {};
     } catch (err: any) {
       const message = err.response?.data?.error || 'Login failed';
       setError(message);
@@ -96,6 +104,50 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const clearError = () => setError(null);
 
+  const refreshUser = async () => {
+    try {
+      const { user: currentUser } = await authService.getCurrentUser();
+      setUser(currentUser);
+      localStorage.setItem('user', JSON.stringify(currentUser));
+    } catch (err) {
+      console.error('Failed to refresh user:', err);
+    }
+  };
+
+  const verify2FA = async (tempToken: string, code: string) => {
+    try {
+      setError(null);
+      setLoading(true);
+
+      const response = await fetch('http://localhost:3001/api/auth/2fa/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          tempToken,
+          code,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Code de vérification invalide');
+      }
+
+      const data = await response.json();
+      setUser(data.user);
+      localStorage.setItem('user', JSON.stringify(data.user));
+    } catch (err: any) {
+      const message = err.message || 'Verification failed';
+      setError(message);
+      throw new Error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -104,8 +156,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         error,
         register,
         login,
+        verify2FA,
         logout,
         clearError,
+        refreshUser,
       }}
     >
       {children}

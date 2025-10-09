@@ -1,18 +1,21 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FaUser, FaLock, FaExclamationTriangle, FaEnvelope } from 'react-icons/fa';
+import { FaUser, FaLock, FaExclamationTriangle, FaEnvelope, FaShieldAlt } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import DashboardLayout from '../component/dashboard/DashboardLayout';
 import DeleteAccountModal from '../component/settings/DeleteAccountModal';
+import TwoFactorSetup from '../component/settings/TwoFactorSetup';
 import { accountService } from '../services/accountService';
 
 export default function AccountSettings() {
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [show2FASetup, setShow2FASetup] = useState(false);
+  const [disabling2FA, setDisabling2FA] = useState(false);
 
   const handleSendResetEmail = async () => {
     setMessage(null);
@@ -51,6 +54,43 @@ export default function AccountSettings() {
       month: 'long',
       day: 'numeric',
     });
+  };
+
+  const handle2FASuccess = async () => {
+    setMessage({ type: 'success', text: 'Double authentification activée avec succès' });
+    await refreshUser();
+  };
+
+  const handleDisable2FA = async () => {
+    const password = prompt('Entrez votre mot de passe pour désactiver la 2FA :');
+
+    if (!password) return;
+
+    setDisabling2FA(true);
+    setMessage(null);
+
+    try {
+      const response = await fetch('http://localhost:3001/api/auth/2fa/disable', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ password }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Erreur lors de la désactivation');
+      }
+
+      setMessage({ type: 'success', text: 'Double authentification désactivée avec succès' });
+      await refreshUser();
+    } catch (error: any) {
+      setMessage({ type: 'error', text: error.message || 'Erreur lors de la désactivation de la 2FA' });
+    } finally {
+      setDisabling2FA(false);
+    }
   };
 
   return (
@@ -136,6 +176,53 @@ export default function AccountSettings() {
           <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+            className="bg-slate-800 border border-slate-700 rounded-lg p-6"
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <FaShieldAlt className="text-purple-400 text-xl" />
+              <h2 className="text-xl font-semibold text-white">Double authentification (2FA)</h2>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 bg-slate-900 border border-slate-700 rounded-lg">
+                <div>
+                  <p className="text-white font-medium mb-1">
+                    {user?.twoFactorEnabled ? 'Activée' : 'Désactivée'}
+                  </p>
+                  <p className="text-sm text-slate-400">
+                    {user?.twoFactorEnabled
+                      ? 'Votre compte est protégé par la double authentification'
+                      : 'Ajoutez une couche de sécurité supplémentaire à votre compte'}
+                  </p>
+                </div>
+                <div className={`w-3 h-3 rounded-full ${user?.twoFactorEnabled ? 'bg-green-500' : 'bg-slate-600'}`} />
+              </div>
+
+              {!user?.twoFactorEnabled ? (
+                <button
+                  onClick={() => setShow2FASetup(true)}
+                  className="flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/50"
+                >
+                  <FaShieldAlt />
+                  Activer la double authentification
+                </button>
+              ) : (
+                <button
+                  onClick={handleDisable2FA}
+                  disabled={disabling2FA}
+                  className="flex items-center gap-2 px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <FaShieldAlt />
+                  {disabling2FA ? 'Désactivation...' : 'Désactiver la double authentification'}
+                </button>
+              )}
+            </div>
+          </motion.section>
+
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
             className="bg-slate-800 border border-red-900/50 rounded-lg p-6"
           >
@@ -165,6 +252,12 @@ export default function AccountSettings() {
         onClose={() => setShowDeleteModal(false)}
         onConfirm={handleDeleteAccount}
         userEmail={user?.email || ''}
+      />
+
+      <TwoFactorSetup
+        isOpen={show2FASetup}
+        onClose={() => setShow2FASetup(false)}
+        onSuccess={handle2FASuccess}
       />
     </DashboardLayout>
   );

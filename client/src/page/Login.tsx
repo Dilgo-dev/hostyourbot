@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
+import TwoFactorVerify from '../component/auth/TwoFactorVerify';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -14,6 +15,8 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [show2FA, setShow2FA] = useState(false);
+  const [tempToken, setTempToken] = useState<string>('');
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -40,7 +43,16 @@ export default function Login() {
     clearError();
 
     try {
-      await login(formData.email, formData.password);
+      const result = await login(formData.email, formData.password);
+
+      if (result.requires2FA && result.tempToken) {
+        setTempToken(result.tempToken);
+        setShow2FA(true);
+        setIsSubmitting(false);
+        return;
+      }
+
+      navigate('/');
     } catch (err: any) {
       console.error('Login error:', err);
       setIsSubmitting(false);
@@ -48,7 +60,15 @@ export default function Login() {
     }
 
     setIsSubmitting(false);
+  };
+
+  const handle2FASuccess = () => {
     navigate('/');
+  };
+
+  const handleBack2FA = () => {
+    setShow2FA(false);
+    setTempToken('');
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -58,6 +78,10 @@ export default function Login() {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
   };
+
+  if (show2FA && tempToken) {
+    return <TwoFactorVerify tempToken={tempToken} onSuccess={handle2FASuccess} onBack={handleBack2FA} />;
+  }
 
   return (
     <div className="min-h-screen bg-slate-900 flex items-center justify-center px-4 pt-16">

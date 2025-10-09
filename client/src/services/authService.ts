@@ -5,6 +5,7 @@ export interface User {
   email: string;
   createdAt: string;
   updatedAt: string;
+  twoFactorEnabled?: boolean;
 }
 
 export interface RegisterResponse {
@@ -15,6 +16,8 @@ export interface RegisterResponse {
 export interface LoginResponse {
   message: string;
   user: User;
+  requires2FA?: boolean;
+  tempToken?: string;
 }
 
 export const authService = {
