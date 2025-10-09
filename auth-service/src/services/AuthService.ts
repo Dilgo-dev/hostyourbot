@@ -4,6 +4,7 @@ import * as bcrypt from 'bcrypt';
 import axios from 'axios';
 import { User } from '../entities/User';
 import { AppDataSource } from '../config/database';
+import { sendWelcomeEmail } from '../grpc/mailGrpcClient';
 
 export class AuthService {
   private userRepository: Repository<User>;
@@ -42,6 +43,13 @@ export class AuthService {
       console.log('[AuthService] Generating JWT token');
       const token = this.generateToken(savedUser.id);
       console.log('[AuthService] Registration completed successfully');
+
+      sendWelcomeEmail({
+        to: savedUser.email,
+        user_name: savedUser.email.split('@')[0],
+      }).catch((error) => {
+        console.error('[AuthService] Erreur envoi email bienvenue:', error);
+      });
 
       return { user: savedUser, token };
     } catch (error) {

@@ -40,6 +40,7 @@ services:
       - CLIENT_URL=http://localhost:5174
       - LOGS_GRPC_URL=logs-service:50052
       - K8S_SERVICE_URL=http://k8s-service:3003
+      - MAIL_GRPC_URL=mail-service:50053
     depends_on:
       postgres-auth:
         condition: service_healthy
@@ -79,6 +80,27 @@ services:
       - PORT=3003
       - K8S_API_URL=${K8S_API_URL}
       - K8S_API_TOKEN=${K8S_API_TOKEN}
+    restart: unless-stopped
+
+  mail-service:
+    build:
+      context: ./mail-service
+      target: development
+    container_name: hostyourbot-mail-service-dev
+    ports:
+      - "50053:50053"
+    volumes:
+      - ./mail-service:/app
+      - /app/node_modules
+    environment:
+      - ENVIRONMENT=development
+      - GRPC_PORT=50053
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_SECURE=${SMTP_SECURE}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - SMTP_FROM=${SMTP_FROM}
     restart: unless-stopped
 
   client:
