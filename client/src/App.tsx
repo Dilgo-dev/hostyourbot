@@ -6,7 +6,6 @@ import Register from "./page/Register";
 import Login from "./page/Login";
 import ForgotPassword from "./page/ForgotPassword";
 import ResetPassword from "./page/ResetPassword";
-import OAuthCallback from "./page/OAuthCallback";
 import Dashboard from "./page/Dashboard";
 import CreateBot from "./page/CreateBot";
 import BotDetail from "./page/BotDetail";
@@ -37,10 +36,6 @@ const router = createBrowserRouter([
       {
         path: "reset-password",
         element: <ResetPassword />,
-      },
-      {
-        path: "oauth/callback",
-        element: <OAuthCallback />,
       },
       {
         path: "*",
