@@ -6,9 +6,10 @@ interface AuthContextType {
   loading: boolean;
   error: string | null;
   register: (email: string, password: string) => Promise<void>;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<{ requires2FA?: boolean; tempToken?: string }>;
   logout: () => Promise<void>;
   clearError: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -72,8 +73,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setError(null);
       setLoading(true);
       const response = await authService.login(email, password);
+
+      if (response.requires2FA && response.tempToken) {
+        return { requires2FA: true, tempToken: response.tempToken };
+      }
+
       setUser(response.user);
       localStorage.setItem('user', JSON.stringify(response.user));
+      return {};
     } catch (err: any) {
       const message = err.response?.data?.error || 'Login failed';
       setError(message);
@@ -96,6 +103,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const clearError = () => setError(null);
 
+  const refreshUser = async () => {
+    try {
+      const { user: currentUser } = await authService.getCurrentUser();
+      setUser(currentUser);
+      localStorage.setItem('user', JSON.stringify(currentUser));
+    } catch (err) {
+      console.error('Failed to refresh user:', err);
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -106,6 +123,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         login,
         logout,
         clearError,
+        refreshUser,
       }}
     >
       {children}
