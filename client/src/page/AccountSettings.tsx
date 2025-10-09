@@ -17,6 +17,7 @@ export default function AccountSettings() {
   const [show2FASetup, setShow2FASetup] = useState(false);
   const [disabling2FA, setDisabling2FA] = useState(false);
   const [exportingData, setExportingData] = useState(false);
+  const [exportFormat, setExportFormat] = useState<'json' | 'html'>('json');
 
   const handleSendResetEmail = async () => {
     setMessage(null);
@@ -103,11 +104,12 @@ export default function AccountSettings() {
     setMessage(null);
 
     try {
-      const blob = await accountService.exportUserData();
+      const blob = await accountService.exportUserData(exportFormat);
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `mes-donnees-${new Date().toISOString().split('T')[0]}.json`;
+      const extension = exportFormat === 'html' ? 'html' : 'json';
+      link.download = `mes-donnees-${new Date().toISOString().split('T')[0]}.${extension}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -285,16 +287,39 @@ export default function AccountSettings() {
 
             <div className="space-y-4">
               <p className="text-slate-400">
-                Téléchargez une copie de toutes vos données personnelles au format JSON.
+                Téléchargez une copie de toutes vos données personnelles.
               </p>
+
+              <div className="flex gap-4 mb-4">
+                <button
+                  onClick={() => setExportFormat('json')}
+                  className={`flex-1 px-4 py-3 rounded-lg border-2 font-semibold transition-all duration-200 ${
+                    exportFormat === 'json'
+                      ? 'bg-purple-600 border-purple-600 text-white'
+                      : 'bg-slate-900 border-slate-700 text-slate-400 hover:border-purple-500'
+                  }`}
+                >
+                  JSON
+                </button>
+                <button
+                  onClick={() => setExportFormat('html')}
+                  className={`flex-1 px-4 py-3 rounded-lg border-2 font-semibold transition-all duration-200 ${
+                    exportFormat === 'html'
+                      ? 'bg-purple-600 border-purple-600 text-white'
+                      : 'bg-slate-900 border-slate-700 text-slate-400 hover:border-purple-500'
+                  }`}
+                >
+                  HTML
+                </button>
+              </div>
 
               <button
                 onClick={handleExportData}
                 disabled={exportingData}
-                className="flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed w-full justify-center"
               >
                 <FaDownload />
-                {exportingData ? 'Téléchargement...' : 'Télécharger mes données'}
+                {exportingData ? 'Téléchargement...' : `Télécharger en ${exportFormat.toUpperCase()}`}
               </button>
             </div>
           </motion.section>
