@@ -209,4 +209,37 @@ export class AuthController {
       res.status(400).json({ error: (error as Error).message });
     }
   };
+
+  exportUserData = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const userId = (req as any).userId;
+
+      const user = await this.authService.getUserById(userId);
+
+      if (!user) {
+        res.status(404).json({ error: 'User not found' });
+        return;
+      }
+
+      const userData = {
+        id: user.id,
+        email: user.email,
+        discordId: user.discordId,
+        discordUsername: user.discordUsername,
+        discordAvatar: user.discordAvatar,
+        twoFactorEnabled: user.twoFactorEnabled,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      };
+
+      await logInfo('Export des données utilisateur', { userId });
+
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', `attachment; filename="mes-donnees-${new Date().toISOString().split('T')[0]}.json"`);
+      res.status(200).json(userData);
+    } catch (error) {
+      await logError('Échec de l\'export des données', { error: (error as Error).message });
+      res.status(500).json({ error: (error as Error).message });
+    }
+  };
 }

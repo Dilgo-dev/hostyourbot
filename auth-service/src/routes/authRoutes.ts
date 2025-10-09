@@ -15,6 +15,7 @@ router.get('/me', authMiddleware, authController.me);
 router.post('/logout', authMiddleware, authController.logout);
 router.put('/account/password', authMiddleware, authController.updatePassword);
 router.delete('/account', authMiddleware, authController.deleteAccount);
+router.get('/account/export-data', authMiddleware, authController.exportUserData);
 router.post('/forgot-password', authController.forgotPassword);
 router.post('/reset-password', authController.resetPassword);
 
