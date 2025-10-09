@@ -30,6 +30,7 @@ export interface CreateBotRequest {
   zipFile: File | null;
   envVars: EnvVar[];
   startCommand?: string;
+  userId?: string;
 }
 
 export interface BotStats {
@@ -60,6 +61,10 @@ export const botService = {
     formData.append('name', data.name);
     formData.append('language', data.language);
     formData.append('version', data.version);
+
+    if (data.userId) {
+      formData.append('userId', data.userId);
+    }
 
     if (data.zipFile) {
       formData.append('zipFile', data.zipFile);

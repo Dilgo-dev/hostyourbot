@@ -23,6 +23,7 @@ export interface BotConfig {
   language: string;
   version: string;
   image: string;
+  userId?: string;
   startCommand?: string;
   zipFileBase64?: string;
   env?: EnvVar[];

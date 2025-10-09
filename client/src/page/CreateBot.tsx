@@ -10,9 +10,11 @@ import CommandInput from '../component/createbot/CommandInput';
 import EnvVarEditor from '../component/createbot/EnvVarEditor';
 import DeploymentSummary from '../component/createbot/DeploymentSummary';
 import { botService, type EnvVar } from '../services/botService';
+import { useAuth } from '../context/AuthContext';
 
 export default function CreateBot() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,6 +56,7 @@ export default function CreateBot() {
         zipFile,
         startCommand: startCommand.trim() || undefined,
         envVars: validEnvVars,
+        userId: user?.id,
       });
 
       navigate('/dashboard');
