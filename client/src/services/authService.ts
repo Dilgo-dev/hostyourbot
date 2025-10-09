@@ -3,6 +3,7 @@ import { authApi } from './api';
 export interface User {
   id: string;
   email: string | null;
+  role?: 'user' | 'admin';
   createdAt: string;
   updatedAt: string;
   twoFactorEnabled?: boolean;
