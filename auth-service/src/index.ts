@@ -8,6 +8,7 @@ import dotenv from 'dotenv';
 import { AppDataSource } from './config/database';
 import authRoutes from './routes/authRoutes';
 import { initLogsGrpcClient } from './grpc/logsGrpcClient';
+import { initMailGrpcClient } from './grpc/mailGrpcClient';
 
 dotenv.config();
 
@@ -40,6 +41,7 @@ AppDataSource.initialize()
     console.log('Database connected successfully');
 
     initLogsGrpcClient();
+    initMailGrpcClient();
 
     app.listen(PORT, () => {
       console.log(`Auth service running on port ${PORT}`);

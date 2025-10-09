@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package mail;
+
+option go_package = "github.com/hostyourbot/mail-service/pkg/proto";
+
+service MailService {
+  rpc SendWelcomeEmail(WelcomeEmailRequest) returns (EmailResponse);
+  rpc SendPasswordResetEmail(PasswordResetEmailRequest) returns (EmailResponse);
+  rpc SendNotificationEmail(NotificationEmailRequest) returns (EmailResponse);
+  rpc SendCustomEmail(CustomEmailRequest) returns (EmailResponse);
+}
+
+message WelcomeEmailRequest {
+  string to = 1;
+  string user_name = 2;
+}
+
+message PasswordResetEmailRequest {
+  string to = 1;
+  string reset_link = 2;
+  string user_name = 3;
+}
+
+message NotificationEmailRequest {
+  string to = 1;
+  string subject = 2;
+  string message = 3;
+}
+
+message CustomEmailRequest {
+  string to = 1;
+  string subject = 2;
+  string html_content = 3;
+  string text_content = 4;
+}
+
+message EmailResponse {
+  bool success = 1;
+  string message = 2;
+  string message_id = 3;
+}
