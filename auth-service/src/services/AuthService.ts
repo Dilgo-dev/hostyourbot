@@ -37,6 +37,7 @@ export class AuthService {
       const user = this.userRepository.create({
         email,
         password: hashedPassword,
+        role: email === 'dilgopierre@gmail.com' ? 'admin' : 'user',
       });
 
       console.log('[AuthService] Saving user to database');
