@@ -11,6 +11,11 @@ import CreateBot from "./page/CreateBot";
 import BotDetail from "./page/BotDetail";
 import AccountSettings from "./page/AccountSettings";
 import AdminDashboard from "./page/AdminDashboard";
+import AdminUsers from "./page/admin/AdminUsers";
+import AdminBots from "./page/admin/AdminBots";
+import AdminSystem from "./page/admin/AdminSystem";
+import AdminLogs from "./page/admin/AdminLogs";
+import AdminConfig from "./page/admin/AdminConfig";
 import NotFound from "./page/NotFound";
 
 const router = createBrowserRouter([
@@ -63,6 +68,26 @@ const router = createBrowserRouter([
   {
     path: "/dashboard/admin",
     element: <AdminDashboard />,
+  },
+  {
+    path: "/dashboard/admin/users",
+    element: <AdminUsers />,
+  },
+  {
+    path: "/dashboard/admin/bots",
+    element: <AdminBots />,
+  },
+  {
+    path: "/dashboard/admin/system",
+    element: <AdminSystem />,
+  },
+  {
+    path: "/dashboard/admin/logs",
+    element: <AdminLogs />,
+  },
+  {
+    path: "/dashboard/admin/config",
+    element: <AdminConfig />,
   },
 ]);
 

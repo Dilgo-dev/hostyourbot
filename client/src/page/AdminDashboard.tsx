@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FaUserShield, FaUsers, FaRobot, FaServer } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
-import DashboardLayout from '../component/dashboard/DashboardLayout';
+import AdminDashboardLayout from '../component/dashboard/AdminDashboardLayout';
 
 export default function AdminDashboard() {
   const { user, loading } = useAuth();
@@ -28,7 +28,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <DashboardLayout>
+    <AdminDashboardLayout>
       <div className="max-w-7xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -119,6 +119,6 @@ export default function AdminDashboard() {
           </motion.div>
         </motion.div>
       </div>
-    </DashboardLayout>
+    </AdminDashboardLayout>
   );
 }
