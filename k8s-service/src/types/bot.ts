@@ -39,6 +39,7 @@ export interface Bot {
   namespace: string;
   image: string;
   replicas: number;
+  userId?: string;
   createdAt: string;
   updatedAt?: string;
   podInfo?: {
