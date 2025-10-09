@@ -23,8 +23,17 @@ export class AuthController {
 
       const { user, token } = await this.authService.register(email, password);
 
-      const userResponse = { ...user };
-      delete (userResponse as any).password;
+      const userResponse = {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        discordId: user.discordId,
+        discordUsername: user.discordUsername,
+        discordAvatar: user.discordAvatar,
+        twoFactorEnabled: user.twoFactorEnabled,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      };
 
       res.cookie('token', token, {
         httpOnly: true,
@@ -58,8 +67,17 @@ export class AuthController {
 
       const { user, token, requires2FA, tempToken } = await this.authService.login(email, password);
 
-      const userResponse = { ...user };
-      delete (userResponse as any).password;
+      const userResponse = {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        discordId: user.discordId,
+        discordUsername: user.discordUsername,
+        discordAvatar: user.discordAvatar,
+        twoFactorEnabled: user.twoFactorEnabled,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      };
 
       if (requires2FA && tempToken) {
         await logInfo('Connexion réussie - 2FA requis', { userId: user.id, email: user.email });
@@ -103,8 +121,17 @@ export class AuthController {
         return;
       }
 
-      const userResponse = { ...user };
-      delete (userResponse as any).password;
+      const userResponse = {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        discordId: user.discordId,
+        discordUsername: user.discordUsername,
+        discordAvatar: user.discordAvatar,
+        twoFactorEnabled: user.twoFactorEnabled,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      };
 
       res.status(200).json({ user: userResponse });
     } catch (error) {
@@ -311,6 +338,10 @@ export class AuthController {
         <div class="field-label">Email :</div>
         <div class="field-value">${userData.email || 'Non renseigné'}</div>
       </div>
+      <div class="field">
+        <div class="field-label">Rôle :</div>
+        <div class="field-value">${userData.role === 'admin' ? 'Administrateur' : 'Utilisateur'}</div>
+      </div>
     </div>
 
     <div class="section">
@@ -374,6 +405,7 @@ export class AuthController {
       const userData = {
         id: user.id,
         email: user.email,
+        role: user.role,
         discordId: user.discordId,
         discordUsername: user.discordUsername,
         discordAvatar: user.discordAvatar,

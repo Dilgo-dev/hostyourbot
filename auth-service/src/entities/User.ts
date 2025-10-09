@@ -8,6 +8,11 @@ import {
 import { IsEmail, MinLength } from 'class-validator';
 import * as bcrypt from 'bcrypt';
 
+export enum UserRole {
+  USER = 'user',
+  ADMIN = 'admin',
+}
+
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn('uuid')
@@ -41,6 +46,9 @@ export class User {
 
   @Column({ type: 'boolean', default: false })
   twoFactorEnabled: boolean;
+
+  @Column({ type: 'varchar', default: UserRole.USER })
+  role: UserRole;
 
   @CreateDateColumn()
   createdAt: Date;
