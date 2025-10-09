@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FaEnvelope, FaLock, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaDiscord } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import TwoFactorVerify from '../component/auth/TwoFactorVerify';
 
@@ -178,6 +178,23 @@ export default function Login() {
               >
                 {isSubmitting ? 'Connexion en cours...' : 'Se connecter'}
               </button>
+
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-white/10"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white/5 text-slate-400">Ou continuer avec</span>
+                </div>
+              </div>
+
+              <a
+                href={`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/auth/discord`}
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-lg font-semibold transition-all duration-200 hover:shadow-lg hover:shadow-indigo-500/50 flex items-center justify-center gap-2"
+              >
+                <FaDiscord className="text-xl" />
+                Se connecter avec Discord
+              </a>
             </div>
 
             <div className="mt-6 text-center">

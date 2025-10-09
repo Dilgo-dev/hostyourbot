@@ -13,13 +13,22 @@ export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ unique: true })
+  @Column({ type: 'varchar', unique: true, nullable: true })
   @IsEmail()
-  email: string;
+  email: string | null;
 
-  @Column()
+  @Column({ type: 'varchar', nullable: true })
   @MinLength(8)
-  password: string;
+  password: string | null;
+
+  @Column({ type: 'varchar', unique: true, nullable: true })
+  discordId: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  discordUsername: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  discordAvatar: string | null;
 
   @Column({ type: 'varchar', nullable: true })
   resetPasswordToken: string | null;
@@ -40,6 +49,9 @@ export class User {
   updatedAt: Date;
 
   async validatePassword(password: string): Promise<boolean> {
+    if (!this.password) {
+      return false;
+    }
     return bcrypt.compare(password, this.password);
   }
 }

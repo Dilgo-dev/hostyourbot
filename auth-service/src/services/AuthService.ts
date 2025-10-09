@@ -47,12 +47,14 @@ export class AuthService {
       const token = this.generateToken(savedUser.id);
       console.log('[AuthService] Registration completed successfully');
 
-      sendWelcomeEmail({
-        to: savedUser.email,
-        user_name: savedUser.email.split('@')[0],
-      }).catch((error) => {
-        console.error('[AuthService] Erreur envoi email bienvenue:', error);
-      });
+      if (savedUser.email) {
+        sendWelcomeEmail({
+          to: savedUser.email,
+          user_name: savedUser.email.split('@')[0],
+        }).catch((error) => {
+          console.error('[AuthService] Erreur envoi email bienvenue:', error);
+        });
+      }
 
       return { user: savedUser, token };
     } catch (error) {
@@ -287,5 +289,60 @@ export class AuthService {
     const token = this.generateToken(user.id);
 
     return { user, token };
+  }
+
+  async findOrCreateDiscordUser(profile: any): Promise<User> {
+    const discordId = profile.id;
+    const discordUsername = profile.username;
+    const discordAvatar = profile.avatar;
+    const email = profile.email;
+
+    let user = await this.userRepository.findOne({
+      where: { discordId },
+    });
+
+    if (user) {
+      user.discordUsername = discordUsername;
+      user.discordAvatar = discordAvatar;
+      if (email && !user.email) {
+        user.email = email;
+      }
+      await this.userRepository.save(user);
+      return user;
+    }
+
+    if (email) {
+      user = await this.userRepository.findOne({
+        where: { email },
+      });
+
+      if (user) {
+        user.discordId = discordId;
+        user.discordUsername = discordUsername;
+        user.discordAvatar = discordAvatar;
+        await this.userRepository.save(user);
+        return user;
+      }
+    }
+
+    user = this.userRepository.create({
+      discordId,
+      discordUsername,
+      discordAvatar,
+      email,
+    });
+
+    const savedUser = await this.userRepository.save(user);
+
+    if (savedUser.email) {
+      sendWelcomeEmail({
+        to: savedUser.email,
+        user_name: savedUser.discordUsername || savedUser.email.split('@')[0],
+      }).catch((error) => {
+        console.error('[AuthService] Erreur envoi email bienvenue:', error);
+      });
+    }
+
+    return savedUser;
   }
 }
