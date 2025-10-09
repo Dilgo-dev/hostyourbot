@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FaShieldAlt, FaArrowLeft } from 'react-icons/fa';
+import { useAuth } from '../../context/AuthContext';
 
 interface TwoFactorVerifyProps {
   tempToken: string;
@@ -9,6 +10,7 @@ interface TwoFactorVerifyProps {
 }
 
 export default function TwoFactorVerify({ tempToken, onSuccess, onBack }: TwoFactorVerifyProps) {
+  const { verify2FA, error: authError } = useAuth();
   const [code, setCode] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -29,23 +31,7 @@ export default function TwoFactorVerify({ tempToken, onSuccess, onBack }: TwoFac
     setError(null);
 
     try {
-      const response = await fetch('http://localhost:3001/api/auth/2fa/verify', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          tempToken,
-          code,
-        }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Code de vérification invalide');
-      }
-
+      await verify2FA(tempToken, code);
       onSuccess();
     } catch (err: any) {
       setError(err.message || 'Une erreur est survenue');
