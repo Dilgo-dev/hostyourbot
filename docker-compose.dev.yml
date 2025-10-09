@@ -76,13 +76,16 @@ services:
     container_name: hostyourbot-k8s-service-dev
     ports:
       - "${K8S_PORT}:${K8S_PORT}"
+      - "${K8S_GRPC_PORT}:${K8S_GRPC_PORT}"
     volumes:
       - ./k8s-service:/app
       - /app/node_modules
+      - ./proto:/app/proto
     environment:
       - NODE_ENV=${K8S_NODE_ENV}
       - ENVIRONMENT=${K8S_ENVIRONMENT}
       - PORT=${K8S_PORT}
+      - GRPC_PORT=${K8S_GRPC_PORT}
       - K8S_API_URL=${K8S_API_URL}
       - K8S_API_TOKEN=${K8S_API_TOKEN}
     restart: unless-stopped
@@ -123,6 +126,28 @@ services:
       - VITE_API_URL=${VITE_API_URL}
     stdin_open: true
     tty: true
+    restart: unless-stopped
+
+  webhook-service:
+    build:
+      context: ./webhook-service
+      target: development
+    container_name: hostyourbot-webhook-service-dev
+    volumes:
+      - ./webhook-service:/app
+      - /app/node_modules
+      - ./proto:/app/proto
+    environment:
+      - WEBHOOK_ENVIRONMENT=${WEBHOOK_ENVIRONMENT}
+      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
+      - K8S_GRPC_URL=${K8S_GRPC_URL}
+      - STATS_CRON=${STATS_CRON}
+      - CHECK_INTERVAL=${CHECK_INTERVAL}
+      - CAPACITY_WARNING_THRESHOLD=${CAPACITY_WARNING_THRESHOLD}
+      - CAPACITY_CRITICAL_THRESHOLD=${CAPACITY_CRITICAL_THRESHOLD}
+      - PODS_WARNING_THRESHOLD=${PODS_WARNING_THRESHOLD}
+    depends_on:
+      - k8s-service
     restart: unless-stopped
 
 volumes:
