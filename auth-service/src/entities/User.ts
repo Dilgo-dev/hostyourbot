@@ -21,7 +21,7 @@ export class User {
   @MinLength(8)
   password: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   resetPasswordToken: string | null;
 
   @Column({ type: 'timestamp', nullable: true })
