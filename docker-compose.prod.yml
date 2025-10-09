@@ -56,10 +56,12 @@ services:
     container_name: hostyourbot-k8s-service-prod
     ports:
       - "3003:3003"
+      - "50054:50054"
     environment:
       - NODE_ENV=production
       - ENVIRONMENT=production
       - PORT=3003
+      - GRPC_PORT=50054
       - K8S_API_URL=${K8S_API_URL}
       - K8S_API_TOKEN=${K8S_API_TOKEN}
     restart: unless-stopped
@@ -91,6 +93,24 @@ services:
       - "80:80"
     environment:
       - NODE_ENV=production
+    restart: unless-stopped
+
+  webhook-service:
+    build:
+      context: ./webhook-service
+      target: production
+    container_name: hostyourbot-webhook-service-prod
+    environment:
+      - WEBHOOK_ENVIRONMENT=production
+      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
+      - K8S_GRPC_URL=k8s-service:50054
+      - STATS_CRON=${STATS_CRON}
+      - CHECK_INTERVAL=${CHECK_INTERVAL}
+      - CAPACITY_WARNING_THRESHOLD=${CAPACITY_WARNING_THRESHOLD}
+      - CAPACITY_CRITICAL_THRESHOLD=${CAPACITY_CRITICAL_THRESHOLD}
+      - PODS_WARNING_THRESHOLD=${PODS_WARNING_THRESHOLD}
+    depends_on:
+      - k8s-service
     restart: unless-stopped
 
 volumes:

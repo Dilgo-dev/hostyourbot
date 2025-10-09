@@ -18,6 +18,8 @@
   "dependencies": {
     "@fastify/cors": "^10.0.2",
     "@fastify/multipart": "^9.2.1",
+    "@grpc/grpc-js": "^1.12.4",
+    "@grpc/proto-loader": "^0.7.15",
     "axios": "^1.7.9",
     "dotenv": "^16.4.1",
     "fastify": "^5.2.2"
