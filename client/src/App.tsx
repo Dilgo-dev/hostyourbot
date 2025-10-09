@@ -4,6 +4,7 @@ import Layout from "./component/Layout";
 import Home from "./page/Home";
 import Register from "./page/Register";
 import Login from "./page/Login";
+import ForgotPassword from "./page/ForgotPassword";
 import Dashboard from "./page/Dashboard";
 import CreateBot from "./page/CreateBot";
 import BotDetail from "./page/BotDetail";
@@ -26,6 +27,10 @@ const router = createBrowserRouter([
       {
         path: "login",
         element: <Login />,
+      },
+      {
+        path: "forgot-password",
+        element: <ForgotPassword />,
       },
       {
         path: "*",
