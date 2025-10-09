@@ -34,6 +34,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   useEffect(() => {
     const initAuth = async () => {
+      const publicPaths = ['/login', '/register', '/forgot-password', '/reset-password'];
+      const isPublicPage = publicPaths.some(path => window.location.pathname.startsWith(path));
+
       const savedUser = localStorage.getItem('user');
 
       if (savedUser) {
@@ -44,18 +47,20 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         }
       }
 
-      try {
-        const { user: currentUser } = await authService.getCurrentUser();
-        setUser(currentUser);
-        localStorage.setItem('user', JSON.stringify(currentUser));
-      } catch (err) {
-        if (savedUser) {
-          localStorage.removeItem('user');
+      if (!isPublicPage || savedUser) {
+        try {
+          const { user: currentUser } = await authService.getCurrentUser();
+          setUser(currentUser);
+          localStorage.setItem('user', JSON.stringify(currentUser));
+        } catch (err) {
+          if (savedUser) {
+            localStorage.removeItem('user');
+          }
+          setUser(null);
         }
-        setUser(null);
-      } finally {
-        setLoading(false);
       }
+
+      setLoading(false);
     };
 
     initAuth();

@@ -25,8 +25,13 @@ authApi.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+      const publicPaths = ['/login', '/register', '/forgot-password', '/reset-password', '/'];
+      const currentPath = window.location.pathname;
+
+      if (!publicPaths.includes(currentPath)) {
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
@@ -36,8 +41,13 @@ k8sApi.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+      const publicPaths = ['/login', '/register', '/forgot-password', '/reset-password', '/'];
+      const currentPath = window.location.pathname;
+
+      if (!publicPaths.includes(currentPath)) {
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
