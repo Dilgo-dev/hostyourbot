@@ -39,15 +39,23 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (savedUser) {
         try {
           setUser(JSON.parse(savedUser));
-          const { user: currentUser } = await authService.getCurrentUser();
-          setUser(currentUser);
-          localStorage.setItem('user', JSON.stringify(currentUser));
         } catch (err) {
-          localStorage.removeItem('user');
-          setUser(null);
+          console.error('Failed to parse saved user:', err);
         }
       }
-      setLoading(false);
+
+      try {
+        const { user: currentUser } = await authService.getCurrentUser();
+        setUser(currentUser);
+        localStorage.setItem('user', JSON.stringify(currentUser));
+      } catch (err) {
+        if (savedUser) {
+          localStorage.removeItem('user');
+        }
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
     };
 
     initAuth();
