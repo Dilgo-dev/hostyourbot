@@ -23,6 +23,36 @@ export class DiscordWebhookService {
     this.webhookUrl = config.discord.webhookUrl;
   }
 
+  isConfigured(): boolean {
+    return !!this.webhookUrl;
+  }
+
+  async testConnection(): Promise<boolean> {
+    if (!this.webhookUrl) {
+      console.warn('⚠️  Discord webhook URL non configurée');
+      return false;
+    }
+
+    try {
+      await axios.post(this.webhookUrl, {
+        embeds: [{
+          title: '✅ Service Webhook Démarré',
+          description: 'Le service de monitoring Discord a démarré avec succès',
+          color: 0x00ff00,
+          timestamp: new Date().toISOString(),
+          footer: {
+            text: 'HostYourBot Monitoring',
+          },
+        }],
+      });
+      console.log('✅ Connexion Discord webhook testée avec succès');
+      return true;
+    } catch (error: any) {
+      console.error('❌ Erreur lors du test de connexion Discord webhook:', error.message);
+      return false;
+    }
+  }
+
   async sendEmbed(embed: DiscordEmbed): Promise<void> {
     if (!this.webhookUrl) {
       console.warn('Discord webhook URL non configurée');

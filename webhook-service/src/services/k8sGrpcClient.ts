@@ -61,6 +61,17 @@ export class K8sGrpcClient {
     );
   }
 
+  async testConnection(): Promise<boolean> {
+    try {
+      await this.getClusterMetrics();
+      console.log('✅ Connexion gRPC k8s-service testée avec succès');
+      return true;
+    } catch (error: any) {
+      console.error('❌ Erreur lors du test de connexion gRPC k8s-service:', error.message);
+      return false;
+    }
+  }
+
   async getClusterMetrics(): Promise<ClusterMetrics> {
     return new Promise((resolve, reject) => {
       this.client.GetClusterMetrics({}, (error: any, response: ClusterMetrics) => {
