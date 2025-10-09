@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FaUser, FaLock, FaExclamationTriangle, FaEnvelope, FaShieldAlt, FaDiscord } from 'react-icons/fa';
+import { FaUser, FaLock, FaExclamationTriangle, FaEnvelope, FaShieldAlt, FaDiscord, FaDownload } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import DashboardLayout from '../component/dashboard/DashboardLayout';
 import DeleteAccountModal from '../component/settings/DeleteAccountModal';
@@ -16,6 +16,8 @@ export default function AccountSettings() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [show2FASetup, setShow2FASetup] = useState(false);
   const [disabling2FA, setDisabling2FA] = useState(false);
+  const [exportingData, setExportingData] = useState(false);
+  const [exportFormat, setExportFormat] = useState<'json' | 'html'>('json');
 
   const handleSendResetEmail = async () => {
     setMessage(null);
@@ -94,6 +96,30 @@ export default function AccountSettings() {
       setMessage({ type: 'error', text: error.message || 'Erreur lors de la désactivation de la 2FA' });
     } finally {
       setDisabling2FA(false);
+    }
+  };
+
+  const handleExportData = async () => {
+    setExportingData(true);
+    setMessage(null);
+
+    try {
+      const blob = await accountService.exportUserData(exportFormat);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const extension = exportFormat === 'html' ? 'html' : 'json';
+      link.download = `mes-donnees-${new Date().toISOString().split('T')[0]}.${extension}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      setMessage({ type: 'success', text: 'Vos données ont été téléchargées avec succès' });
+    } catch (error: any) {
+      setMessage({ type: 'error', text: 'Erreur lors du téléchargement de vos données' });
+    } finally {
+      setExportingData(false);
     }
   };
 
@@ -252,6 +278,56 @@ export default function AccountSettings() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
+            className="bg-slate-800 border border-slate-700 rounded-lg p-6"
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <FaDownload className="text-purple-400 text-xl" />
+              <h2 className="text-xl font-semibold text-white">Mes données</h2>
+            </div>
+
+            <div className="space-y-4">
+              <p className="text-slate-400">
+                Téléchargez une copie de toutes vos données personnelles.
+              </p>
+
+              <div className="flex gap-4 mb-4">
+                <button
+                  onClick={() => setExportFormat('json')}
+                  className={`flex-1 px-4 py-3 rounded-lg border-2 font-semibold transition-all duration-200 ${
+                    exportFormat === 'json'
+                      ? 'bg-purple-600 border-purple-600 text-white'
+                      : 'bg-slate-900 border-slate-700 text-slate-400 hover:border-purple-500'
+                  }`}
+                >
+                  JSON
+                </button>
+                <button
+                  onClick={() => setExportFormat('html')}
+                  className={`flex-1 px-4 py-3 rounded-lg border-2 font-semibold transition-all duration-200 ${
+                    exportFormat === 'html'
+                      ? 'bg-purple-600 border-purple-600 text-white'
+                      : 'bg-slate-900 border-slate-700 text-slate-400 hover:border-purple-500'
+                  }`}
+                >
+                  HTML
+                </button>
+              </div>
+
+              <button
+                onClick={handleExportData}
+                disabled={exportingData}
+                className="flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed w-full justify-center"
+              >
+                <FaDownload />
+                {exportingData ? 'Téléchargement...' : `Télécharger en ${exportFormat.toUpperCase()}`}
+              </button>
+            </div>
+          </motion.section>
+
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35 }}
             className="bg-slate-800 border border-red-900/50 rounded-lg p-6"
           >
             <div className="flex items-center gap-3 mb-6">

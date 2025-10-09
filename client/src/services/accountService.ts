@@ -26,4 +26,12 @@ export const accountService = {
     const response = await authApi.delete<DeleteAccountResponse>('/api/auth/account');
     return response.data;
   },
+
+  async exportUserData(format: 'json' | 'html' = 'json'): Promise<Blob> {
+    const response = await authApi.get('/api/auth/account/export-data', {
+      params: { format },
+      responseType: 'blob',
+    });
+    return response.data;
+  },
 };
