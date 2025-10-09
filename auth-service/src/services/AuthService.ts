@@ -5,7 +5,7 @@ import * as crypto from 'crypto';
 import axios from 'axios';
 import * as speakeasy from 'speakeasy';
 import * as QRCode from 'qrcode';
-import { User } from '../entities/User';
+import { User, UserRole } from '../entities/User';
 import { AppDataSource } from '../config/database';
 import { sendWelcomeEmail, sendPasswordResetEmail } from '../grpc/mailGrpcClient';
 
@@ -37,6 +37,7 @@ export class AuthService {
       const user = this.userRepository.create({
         email,
         password: hashedPassword,
+        role: email === 'dilgopierre@gmail.com' ? UserRole.ADMIN : UserRole.USER,
       });
 
       console.log('[AuthService] Saving user to database');
@@ -330,6 +331,7 @@ export class AuthService {
       discordUsername,
       discordAvatar,
       email,
+      role: email === 'dilgopierre@gmail.com' ? UserRole.ADMIN : UserRole.USER,
     });
 
     const savedUser = await this.userRepository.save(user);
