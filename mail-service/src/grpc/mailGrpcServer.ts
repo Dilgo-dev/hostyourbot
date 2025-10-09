@@ -3,7 +3,7 @@ import * as protoLoader from '@grpc/proto-loader';
 import path from 'path';
 import { MailService } from '../services/mailService';
 
-const PROTO_PATH = path.join(__dirname, '../../../proto/mail.proto');
+const PROTO_PATH = path.join(__dirname, '../../proto/mail.proto');
 
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   keepCase: true,
