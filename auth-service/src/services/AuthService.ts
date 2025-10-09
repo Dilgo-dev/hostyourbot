@@ -107,7 +107,7 @@ export class AuthService {
   }
 
   async deleteAccount(userId: string): Promise<void> {
-    const k8sServiceUrl = process.env.K8S_SERVICE_URL || 'http://k8s-service:3002';
+    const k8sServiceUrl = process.env.K8S_SERVICE_URL || 'http://k8s-service:3003';
 
     try {
       await axios.delete(`${k8sServiceUrl}/api/v1/bots/user/${userId}`);
