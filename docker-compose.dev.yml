@@ -3,15 +3,15 @@ services:
     image: postgres:16-alpine
     container_name: hostyourbot-postgres-auth-dev
     environment:
-      - POSTGRES_DB=auth_db
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
       - postgres-auth-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d auth_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -23,24 +23,29 @@ services:
       target: development
     container_name: hostyourbot-auth-service-dev
     ports:
-      - "3001:3001"
+      - "${AUTH_PORT}:${AUTH_PORT}"
     volumes:
       - ./auth-service:/app
       - /app/node_modules
     environment:
-      - NODE_ENV=development
-      - PORT=3001
-      - DB_HOST=postgres-auth
-      - DB_PORT=5432
-      - DB_USERNAME=postgres
-      - DB_PASSWORD=postgres
-      - DB_NAME=auth_db
-      - JWT_SECRET=dev_secret_key_change_in_production
-      - NODE_OPTIONS=--max-old-space-size=512
-      - CLIENT_URL=http://localhost:5174
-      - LOGS_GRPC_URL=logs-service:50052
-      - K8S_SERVICE_URL=http://k8s-service:3003
-      - MAIL_GRPC_URL=mail-service:50053
+      - NODE_ENV=${AUTH_NODE_ENV}
+      - PORT=${AUTH_PORT}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - JWT_SECRET=${JWT_SECRET}
+      - SESSION_SECRET=${SESSION_SECRET}
+      - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID}
+      - DISCORD_CLIENT_SECRET=${DISCORD_CLIENT_SECRET}
+      - DISCORD_CALLBACK_URL=${DISCORD_CALLBACK_URL}
+      - FRONTEND_URL=${FRONTEND_URL}
+      - CLIENT_URL=${CLIENT_URL}
+      - NODE_OPTIONS=${NODE_OPTIONS}
+      - LOGS_GRPC_URL=${LOGS_GRPC_URL}
+      - K8S_SERVICE_URL=${K8S_SERVICE_URL}
+      - MAIL_GRPC_URL=${MAIL_GRPC_URL}
     depends_on:
       postgres-auth:
         condition: service_healthy
@@ -52,16 +57,16 @@ services:
       target: development
     container_name: hostyourbot-logs-service-dev
     ports:
-      - "3002:3002"
-      - "50052:50052"
+      - "${LOGS_PORT}:${LOGS_PORT}"
+      - "${LOGS_GRPC_PORT}:${LOGS_GRPC_PORT}"
     volumes:
       - ./logs-service:/app
       - logs-data:/app/data
     environment:
-      - ENVIRONMENT=development
-      - PORT=3002
-      - GRPC_PORT=50052
-      - DATABASE_PATH=/app/data/logs.db
+      - ENVIRONMENT=${LOGS_ENVIRONMENT}
+      - PORT=${LOGS_PORT}
+      - GRPC_PORT=${LOGS_GRPC_PORT}
+      - DATABASE_PATH=${LOGS_DATABASE_PATH}
     restart: unless-stopped
 
   k8s-service:
@@ -70,14 +75,14 @@ services:
       target: development
     container_name: hostyourbot-k8s-service-dev
     ports:
-      - "3003:3003"
+      - "${K8S_PORT}:${K8S_PORT}"
     volumes:
       - ./k8s-service:/app
       - /app/node_modules
     environment:
-      - NODE_ENV=development
-      - ENVIRONMENT=development
-      - PORT=3003
+      - NODE_ENV=${K8S_NODE_ENV}
+      - ENVIRONMENT=${K8S_ENVIRONMENT}
+      - PORT=${K8S_PORT}
       - K8S_API_URL=${K8S_API_URL}
       - K8S_API_TOKEN=${K8S_API_TOKEN}
     restart: unless-stopped
@@ -88,13 +93,13 @@ services:
       target: development
     container_name: hostyourbot-mail-service-dev
     ports:
-      - "50053:50053"
+      - "${MAIL_GRPC_PORT}:${MAIL_GRPC_PORT}"
     volumes:
       - ./mail-service:/app
       - /app/node_modules
     environment:
-      - ENVIRONMENT=development
-      - GRPC_PORT=50053
+      - ENVIRONMENT=${MAIL_ENVIRONMENT}
+      - GRPC_PORT=${MAIL_GRPC_PORT}
       - SMTP_HOST=${SMTP_HOST}
       - SMTP_PORT=${SMTP_PORT}
       - SMTP_SECURE=${SMTP_SECURE}
@@ -114,7 +119,8 @@ services:
       - ./client:/app
       - /app/node_modules
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=${CLIENT_NODE_ENV}
+      - VITE_API_URL=${VITE_API_URL}
     stdin_open: true
     tty: true
     restart: unless-stopped
