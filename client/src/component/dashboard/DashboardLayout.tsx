@@ -56,6 +56,17 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   };
 
+  const getDiscordAvatarUrl = (discordId: string, discordAvatar: string) => {
+    return `https://cdn.discordapp.com/avatars/${discordId}/${discordAvatar}.png?size=128`;
+  };
+
+  const getUserDisplayName = () => {
+    if (user?.discordUsername) {
+      return user.discordUsername;
+    }
+    return user?.email || 'Utilisateur';
+  };
+
   return (
     <div className="min-h-screen bg-slate-900 flex">
       <motion.aside
@@ -124,11 +135,22 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           {sidebarOpen ? (
             <>
               <div className="flex items-center gap-3 px-3 py-2 mb-2">
-                <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
-                  <FaUser className="text-white text-sm" />
-                </div>
+                {user?.discordId && user?.discordAvatar ? (
+                  <img
+                    src={getDiscordAvatarUrl(user.discordId, user.discordAvatar)}
+                    alt="Avatar Discord"
+                    className="w-10 h-10 rounded-full flex-shrink-0"
+                  />
+                ) : (
+                  <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+                    <FaUser className="text-white text-sm" />
+                  </div>
+                )}
                 <div className="flex-1 overflow-hidden">
-                  <p className="text-white text-sm font-medium truncate">{user?.email}</p>
+                  <p className="text-white text-sm font-medium truncate">{getUserDisplayName()}</p>
+                  {user?.discordUsername && user?.email && (
+                    <p className="text-slate-400 text-xs truncate">{user.email}</p>
+                  )}
                 </div>
               </div>
               <button

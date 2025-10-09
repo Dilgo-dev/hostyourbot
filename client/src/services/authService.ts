@@ -2,10 +2,13 @@ import { authApi } from './api';
 
 export interface User {
   id: string;
-  email: string;
+  email: string | null;
   createdAt: string;
   updatedAt: string;
   twoFactorEnabled?: boolean;
+  discordId?: string | null;
+  discordUsername?: string | null;
+  discordAvatar?: string | null;
 }
 
 export interface RegisterResponse {

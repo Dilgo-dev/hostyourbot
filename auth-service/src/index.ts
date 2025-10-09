@@ -4,11 +4,13 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
+import session from 'express-session';
 import dotenv from 'dotenv';
 import { AppDataSource } from './config/database';
 import authRoutes from './routes/authRoutes';
 import { initLogsGrpcClient } from './grpc/logsGrpcClient';
 import { initMailGrpcClient } from './grpc/mailGrpcClient';
+import passport from './config/passport';
 
 dotenv.config();
 
@@ -29,6 +31,21 @@ app.use(cors({
 app.use(cookieParser());
 app.use(express.json());
 app.use(limiter);
+
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || 'session_secret',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 24 * 60 * 60 * 1000,
+    },
+  })
+);
+
+app.use(passport.initialize());
+app.use(passport.session());
 
 app.use('/api/auth', authRoutes);
 
