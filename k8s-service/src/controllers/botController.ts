@@ -62,9 +62,13 @@ export const deployBot = async (
   }
 };
 
-export const listBots = async (request: FastifyRequest, reply: FastifyReply) => {
+export const listBots = async (
+  request: FastifyRequest<{ Querystring: { userId?: string } }>,
+  reply: FastifyReply
+) => {
   try {
-    const bots = await botService.listBots();
+    const userId = request.query.userId || request.headers['x-user-id'] as string;
+    const bots = await botService.listBots(userId);
     reply.send({ bots, count: bots.length });
   } catch (error: any) {
     reply.status(500).send({ error: 'Failed to list bots', message: error.message });
@@ -72,11 +76,12 @@ export const listBots = async (request: FastifyRequest, reply: FastifyReply) => 
 };
 
 export const getBot = async (
-  request: FastifyRequest<{ Params: { id: string } }>,
+  request: FastifyRequest<{ Params: { id: string }; Querystring: { userId?: string } }>,
   reply: FastifyReply
 ) => {
   try {
-    const bot = await botService.getBot(request.params.id);
+    const userId = request.query.userId || request.headers['x-user-id'] as string;
+    const bot = await botService.getBot(request.params.id, userId);
     reply.send(bot);
   } catch (error: any) {
     reply.status(404).send({ error: 'Bot not found', message: error.message });
@@ -84,11 +89,12 @@ export const getBot = async (
 };
 
 export const deleteBot = async (
-  request: FastifyRequest<{ Params: { id: string } }>,
+  request: FastifyRequest<{ Params: { id: string }; Querystring: { userId?: string } }>,
   reply: FastifyReply
 ) => {
   try {
-    await botService.deleteBot(request.params.id);
+    const userId = request.query.userId || request.headers['x-user-id'] as string;
+    await botService.deleteBot(request.params.id, userId);
     reply.status(204).send();
   } catch (error: any) {
     reply.status(400).send({ error: 'Failed to delete bot', message: error.message });
@@ -96,11 +102,12 @@ export const deleteBot = async (
 };
 
 export const scaleBot = async (
-  request: FastifyRequest<{ Params: { id: string }; Body: BotScaleRequest }>,
+  request: FastifyRequest<{ Params: { id: string }; Body: BotScaleRequest; Querystring: { userId?: string } }>,
   reply: FastifyReply
 ) => {
   try {
-    const bot = await botService.scaleBot(request.params.id, request.body.replicas);
+    const userId = request.query.userId || request.headers['x-user-id'] as string;
+    const bot = await botService.scaleBot(request.params.id, request.body.replicas, userId);
     reply.send(bot);
   } catch (error: any) {
     reply.status(400).send({ error: 'Failed to scale bot', message: error.message });
@@ -108,11 +115,12 @@ export const scaleBot = async (
 };
 
 export const stopBot = async (
-  request: FastifyRequest<{ Params: { id: string } }>,
+  request: FastifyRequest<{ Params: { id: string }; Querystring: { userId?: string } }>,
   reply: FastifyReply
 ) => {
   try {
-    const bot = await botService.stopBot(request.params.id);
+    const userId = request.query.userId || request.headers['x-user-id'] as string;
+    const bot = await botService.stopBot(request.params.id, userId);
     reply.send(bot);
   } catch (error: any) {
     reply.status(400).send({ error: 'Failed to stop bot', message: error.message });
@@ -120,11 +128,12 @@ export const stopBot = async (
 };
 
 export const startBot = async (
-  request: FastifyRequest<{ Params: { id: string } }>,
+  request: FastifyRequest<{ Params: { id: string }; Querystring: { userId?: string } }>,
   reply: FastifyReply
 ) => {
   try {
-    const bot = await botService.startBot(request.params.id);
+    const userId = request.query.userId || request.headers['x-user-id'] as string;
+    const bot = await botService.startBot(request.params.id, userId);
     reply.send(bot);
   } catch (error: any) {
     reply.status(400).send({ error: 'Failed to start bot', message: error.message });
@@ -132,11 +141,12 @@ export const startBot = async (
 };
 
 export const restartBot = async (
-  request: FastifyRequest<{ Params: { id: string } }>,
+  request: FastifyRequest<{ Params: { id: string }; Querystring: { userId?: string } }>,
   reply: FastifyReply
 ) => {
   try {
-    const bot = await botService.restartBot(request.params.id);
+    const userId = request.query.userId || request.headers['x-user-id'] as string;
+    const bot = await botService.restartBot(request.params.id, userId);
     reply.send(bot);
   } catch (error: any) {
     reply.status(400).send({ error: 'Failed to restart bot', message: error.message });
@@ -146,13 +156,14 @@ export const restartBot = async (
 export const getBotLogs = async (
   request: FastifyRequest<{
     Params: { id: string };
-    Querystring: { tailLines?: string };
+    Querystring: { tailLines?: string; userId?: string };
   }>,
   reply: FastifyReply
 ) => {
   try {
+    const userId = request.query.userId || request.headers['x-user-id'] as string;
     const tailLines = request.query.tailLines ? parseInt(request.query.tailLines) : undefined;
-    const logs = await botService.getBotLogs(request.params.id, tailLines);
+    const logs = await botService.getBotLogs(request.params.id, tailLines, userId);
     reply.send({ logs });
   } catch (error: any) {
     reply.status(404).send({ error: 'Failed to get bot logs', message: error.message });

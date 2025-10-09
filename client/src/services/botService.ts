@@ -1,4 +1,5 @@
 import { k8sApi } from './api';
+import { authService } from './authService';
 
 export interface Bot {
   id: string;
@@ -11,6 +12,7 @@ export interface Bot {
   uptime?: number;
   image?: string;
   namespace?: string;
+  userId?: string;
   podInfo?: {
     ready: number;
     total: number;
@@ -42,13 +44,28 @@ export interface BotStats {
 }
 
 export const botService = {
+  async getUserId(): Promise<string | undefined> {
+    try {
+      const { user } = await authService.getCurrentUser();
+      return user.id;
+    } catch {
+      return undefined;
+    }
+  },
+
   async getBots(): Promise<Bot[]> {
-    const response = await k8sApi.get<{ bots: Bot[] }>('/api/v1/bots');
+    const userId = await this.getUserId();
+    const response = await k8sApi.get<{ bots: Bot[] }>('/api/v1/bots', {
+      params: { userId },
+    });
     return response.data.bots;
   },
 
   async getBot(id: string): Promise<Bot> {
-    const response = await k8sApi.get<Bot | { bot: Bot }>(`/api/v1/bots/${id}`);
+    const userId = await this.getUserId();
+    const response = await k8sApi.get<Bot | { bot: Bot }>(`/api/v1/bots/${id}`, {
+      params: { userId },
+    });
     if ('bot' in response.data) {
       return response.data.bot;
     }
@@ -56,14 +73,15 @@ export const botService = {
   },
 
   async createBot(data: CreateBotRequest): Promise<Bot> {
+    const userId = await this.getUserId();
     const formData = new FormData();
 
     formData.append('name', data.name);
     formData.append('language', data.language);
     formData.append('version', data.version);
 
-    if (data.userId) {
-      formData.append('userId', data.userId);
+    if (userId) {
+      formData.append('userId', userId);
     }
 
     if (data.zipFile) {
@@ -86,36 +104,57 @@ export const botService = {
   },
 
   async updateBot(id: string, data: Partial<CreateBotRequest>): Promise<Bot> {
-    const response = await k8sApi.patch<{ bot: Bot }>(`/api/v1/bots/${id}`, data);
+    const userId = await this.getUserId();
+    const response = await k8sApi.patch<{ bot: Bot }>(`/api/v1/bots/${id}`, data, {
+      params: { userId },
+    });
     return response.data.bot;
   },
 
   async deleteBot(id: string): Promise<void> {
-    await k8sApi.delete(`/api/v1/bots/${id}`);
+    const userId = await this.getUserId();
+    await k8sApi.delete(`/api/v1/bots/${id}`, {
+      params: { userId },
+    });
   },
 
   async startBot(id: string): Promise<Bot> {
-    const response = await k8sApi.post<{ bot: Bot }>(`/api/v1/bots/${id}/start`);
+    const userId = await this.getUserId();
+    const response = await k8sApi.post<{ bot: Bot }>(`/api/v1/bots/${id}/start`, null, {
+      params: { userId },
+    });
     return response.data.bot;
   },
 
   async stopBot(id: string): Promise<Bot> {
-    const response = await k8sApi.post<{ bot: Bot }>(`/api/v1/bots/${id}/stop`);
+    const userId = await this.getUserId();
+    const response = await k8sApi.post<{ bot: Bot }>(`/api/v1/bots/${id}/stop`, null, {
+      params: { userId },
+    });
     return response.data.bot;
   },
 
   async restartBot(id: string): Promise<Bot> {
-    const response = await k8sApi.post<{ bot: Bot }>(`/api/v1/bots/${id}/restart`);
+    const userId = await this.getUserId();
+    const response = await k8sApi.post<{ bot: Bot }>(`/api/v1/bots/${id}/restart`, null, {
+      params: { userId },
+    });
     return response.data.bot;
   },
 
   async getStats(): Promise<BotStats> {
-    const response = await k8sApi.get<BotStats>('/api/v1/bots/stats');
+    const userId = await this.getUserId();
+    const response = await k8sApi.get<BotStats>('/api/v1/bots/stats', {
+      params: { userId },
+    });
     return response.data;
   },
 
   async getLogs(id: string, lines: number = 100): Promise<string[]> {
-    const response = await k8sApi.get<{ logs: string | string[] }>(`/api/v1/bots/${id}/logs?lines=${lines}`);
+    const userId = await this.getUserId();
+    const response = await k8sApi.get<{ logs: string | string[] }>(`/api/v1/bots/${id}/logs`, {
+      params: { userId, lines },
+    });
     const logs = response.data.logs;
 
     if (typeof logs === 'string') {

@@ -186,6 +186,7 @@ export class BotDeploymentService {
       namespace: deployment.metadata.namespace || this.baseNamespace,
       image: deployment.spec.template.spec.containers[0]?.image || '',
       replicas: deployment.spec.replicas,
+      userId: deployment.metadata.labels?.['user-id'],
       createdAt: deployment.metadata.creationTimestamp || new Date().toISOString(),
       podInfo: {
         ready: deployment.status?.readyReplicas || 0,
@@ -235,11 +236,19 @@ export class BotDeploymentService {
     return this.mapDeploymentToBot(deployment);
   }
 
-  async listBots(): Promise<Bot[]> {
+  async listBots(userId?: string): Promise<Bot[]> {
     try {
       const deploymentsList = await this.k8sClient.listDeployments(this.baseNamespace);
       return deploymentsList.items
-        .filter((d) => d.metadata.labels?.['managed-by'] === 'hostyourbot')
+        .filter((d) => {
+          const isManagedByHostYourBot = d.metadata.labels?.['managed-by'] === 'hostyourbot';
+          if (!isManagedByHostYourBot) return false;
+
+          if (userId) {
+            return d.metadata.labels?.['user-id'] === userId;
+          }
+          return true;
+        })
         .map((d) => this.mapDeploymentToBot(d));
     } catch (error: any) {
       if (error.response?.status === 404) {
@@ -249,12 +258,25 @@ export class BotDeploymentService {
     }
   }
 
-  async getBot(botId: string): Promise<Bot> {
+  async getBot(botId: string, userId?: string): Promise<Bot> {
     const deployment = await this.k8sClient.getDeployment(botId, this.baseNamespace);
-    return this.mapDeploymentToBot(deployment);
+    const bot = this.mapDeploymentToBot(deployment);
+
+    if (userId && bot.userId !== userId) {
+      throw new Error('Unauthorized: You do not have access to this bot');
+    }
+
+    return bot;
   }
 
-  async deleteBot(botId: string): Promise<void> {
+  async deleteBot(botId: string, userId?: string): Promise<void> {
+    if (userId) {
+      const bot = await this.getBot(botId, userId);
+      if (bot.userId !== userId) {
+        throw new Error('Unauthorized: You do not have access to this bot');
+      }
+    }
+
     await this.k8sClient.deleteDeployment(botId, this.baseNamespace);
 
     try {
@@ -268,7 +290,14 @@ export class BotDeploymentService {
     }
   }
 
-  async scaleBot(botId: string, replicas: number): Promise<Bot> {
+  async scaleBot(botId: string, replicas: number, userId?: string): Promise<Bot> {
+    if (userId) {
+      const bot = await this.getBot(botId, userId);
+      if (bot.userId !== userId) {
+        throw new Error('Unauthorized: You do not have access to this bot');
+      }
+    }
+
     const deployment = await this.k8sClient.scaleDeployment(
       botId,
       replicas,
@@ -277,15 +306,22 @@ export class BotDeploymentService {
     return this.mapDeploymentToBot(deployment);
   }
 
-  async stopBot(botId: string): Promise<Bot> {
-    return this.scaleBot(botId, 0);
+  async stopBot(botId: string, userId?: string): Promise<Bot> {
+    return this.scaleBot(botId, 0, userId);
   }
 
-  async startBot(botId: string): Promise<Bot> {
-    return this.scaleBot(botId, 1);
+  async startBot(botId: string, userId?: string): Promise<Bot> {
+    return this.scaleBot(botId, 1, userId);
   }
 
-  async restartBot(botId: string): Promise<Bot> {
+  async restartBot(botId: string, userId?: string): Promise<Bot> {
+    if (userId) {
+      const bot = await this.getBot(botId, userId);
+      if (bot.userId !== userId) {
+        throw new Error('Unauthorized: You do not have access to this bot');
+      }
+    }
+
     await this.k8sClient.deleteDeployment(botId, this.baseNamespace);
 
     const deployment = await this.k8sClient.getDeployment(botId, this.baseNamespace);
@@ -294,7 +330,14 @@ export class BotDeploymentService {
     return this.mapDeploymentToBot(recreated);
   }
 
-  async getBotLogs(botId: string, tailLines?: number): Promise<string> {
+  async getBotLogs(botId: string, tailLines?: number, userId?: string): Promise<string> {
+    if (userId) {
+      const bot = await this.getBot(botId, userId);
+      if (bot.userId !== userId) {
+        throw new Error('Unauthorized: You do not have access to this bot');
+      }
+    }
+
     const pods = await this.k8sClient.listPods(this.baseNamespace);
     const botPods = pods.items.filter(
       (pod) => pod.metadata.labels?.app === botId
