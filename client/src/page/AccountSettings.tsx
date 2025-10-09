@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FaUser, FaLock, FaExclamationTriangle, FaSave } from 'react-icons/fa';
+import { FaUser, FaLock, FaExclamationTriangle, FaEnvelope } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import DashboardLayout from '../component/dashboard/DashboardLayout';
 import DeleteAccountModal from '../component/settings/DeleteAccountModal';
@@ -10,36 +10,30 @@ import { accountService } from '../services/accountService';
 export default function AccountSettings() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [passwordForm, setPasswordForm] = useState({
-    oldPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-  });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  const handlePasswordChange = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSendResetEmail = async () => {
     setMessage(null);
-
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setMessage({ type: 'error', text: 'Les mots de passe ne correspondent pas' });
-      return;
-    }
-
-    if (passwordForm.newPassword.length < 8) {
-      setMessage({ type: 'error', text: 'Le mot de passe doit contenir au moins 8 caractères' });
-      return;
-    }
 
     try {
       setLoading(true);
-      await accountService.updatePassword(passwordForm.oldPassword, passwordForm.newPassword);
-      setMessage({ type: 'success', text: 'Mot de passe mis à jour avec succès' });
-      setPasswordForm({ oldPassword: '', newPassword: '', confirmPassword: '' });
+      const response = await fetch('http://localhost:3001/api/auth/forgot-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: user?.email }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Erreur lors de l\'envoi de l\'email');
+      }
+
+      setMessage({ type: 'success', text: 'Email de réinitialisation envoyé avec succès' });
     } catch (error: any) {
-      setMessage({ type: 'error', text: error.response?.data?.error || 'Erreur lors de la mise à jour du mot de passe' });
+      setMessage({ type: 'error', text: 'Erreur lors de l\'envoi de l\'email de réinitialisation' });
     } finally {
       setLoading(false);
     }
@@ -123,60 +117,20 @@ export default function AccountSettings() {
               <h2 className="text-xl font-semibold text-white">Sécurité</h2>
             </div>
 
-            <form onSubmit={handlePasswordChange} className="space-y-4">
-              <div>
-                <label htmlFor="oldPassword" className="block text-sm font-medium text-slate-400 mb-2">
-                  Mot de passe actuel
-                </label>
-                <input
-                  type="password"
-                  id="oldPassword"
-                  value={passwordForm.oldPassword}
-                  onChange={(e) => setPasswordForm({ ...passwordForm, oldPassword: e.target.value })}
-                  className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-purple-500 transition-colors"
-                  required
-                />
-              </div>
-
-              <div>
-                <label htmlFor="newPassword" className="block text-sm font-medium text-slate-400 mb-2">
-                  Nouveau mot de passe
-                </label>
-                <input
-                  type="password"
-                  id="newPassword"
-                  value={passwordForm.newPassword}
-                  onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                  className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-purple-500 transition-colors"
-                  required
-                  minLength={8}
-                />
-              </div>
-
-              <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-400 mb-2">
-                  Confirmer le nouveau mot de passe
-                </label>
-                <input
-                  type="password"
-                  id="confirmPassword"
-                  value={passwordForm.confirmPassword}
-                  onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
-                  className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-purple-500 transition-colors"
-                  required
-                  minLength={8}
-                />
-              </div>
+            <div className="space-y-4">
+              <p className="text-slate-400">
+                Pour modifier votre mot de passe, nous vous enverrons un email sécurisé avec un lien de réinitialisation.
+              </p>
 
               <button
-                type="submit"
+                onClick={handleSendResetEmail}
                 disabled={loading}
                 className="flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <FaSave />
-                {loading ? 'Enregistrement...' : 'Mettre à jour le mot de passe'}
+                <FaEnvelope />
+                {loading ? 'Envoi en cours...' : 'Envoyer un email de réinitialisation'}
               </button>
-            </form>
+            </div>
           </motion.section>
 
           <motion.section
