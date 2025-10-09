@@ -1,10 +1,11 @@
 import { Repository } from 'typeorm';
 import jwt from 'jsonwebtoken';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 import axios from 'axios';
 import { User } from '../entities/User';
 import { AppDataSource } from '../config/database';
-import { sendWelcomeEmail } from '../grpc/mailGrpcClient';
+import { sendWelcomeEmail, sendPasswordResetEmail } from '../grpc/mailGrpcClient';
 
 export class AuthService {
   private userRepository: Repository<User>;
@@ -127,5 +128,58 @@ export class AuthService {
     }
 
     await this.userRepository.delete({ id: userId });
+  }
+
+  async requestPasswordReset(email: string): Promise<void> {
+    const user = await this.userRepository.findOne({ where: { email } });
+
+    if (!user) {
+      return;
+    }
+
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+    user.resetPasswordToken = hashedToken;
+    user.resetPasswordExpires = expiresAt;
+
+    await this.userRepository.save(user);
+
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const resetLink = `${frontendUrl}/reset-password?token=${resetToken}`;
+
+    sendPasswordResetEmail({
+      to: user.email,
+      reset_link: resetLink,
+      user_name: user.email.split('@')[0],
+    }).catch((error) => {
+      console.error('[AuthService] Erreur envoi email réinitialisation:', error);
+    });
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    const user = await this.userRepository.findOne({
+      where: {
+        resetPasswordToken: hashedToken,
+      },
+    });
+
+    if (!user || !user.resetPasswordExpires) {
+      throw new Error('Invalid or expired reset token');
+    }
+
+    if (user.resetPasswordExpires < new Date()) {
+      throw new Error('Invalid or expired reset token');
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    user.resetPasswordToken = null;
+    user.resetPasswordExpires = null;
+
+    await this.userRepository.save(user);
   }
 }
