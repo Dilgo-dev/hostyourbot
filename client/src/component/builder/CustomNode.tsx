@@ -2,10 +2,22 @@ import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { FaBolt, FaPaperPlane, FaUserPlus, FaHashtag, FaFilter } from 'react-icons/fa';
 
+export type NodeConfig = {
+  messageContent?: string;
+  channelId?: string;
+  roleId?: string;
+  triggerText?: string;
+  command?: string;
+  channelName?: string;
+  roleName?: string;
+};
+
 export type NodeData = {
   label: string;
   type: 'event' | 'action' | 'condition';
   icon?: string;
+  blockId?: string;
+  config?: NodeConfig;
 };
 
 const getNodeIcon = (iconName?: string) => {
@@ -36,12 +48,12 @@ const getNodeStyles = (type: 'event' | 'action' | 'condition') => {
   }
 };
 
-function CustomNode({ data }: NodeProps<NodeData>) {
+function CustomNode({ data, selected }: NodeProps<NodeData>) {
   const Icon = getNodeIcon(data.icon);
   const styles = getNodeStyles(data.type);
 
   return (
-    <div className={`px-4 py-3 rounded-lg border-2 ${styles} text-white min-w-[180px] shadow-lg`}>
+    <div className={`px-4 py-3 rounded-lg border-2 ${styles} text-white min-w-[180px] shadow-lg ${selected ? 'ring-4 ring-white/50' : ''}`}>
       {data.type !== 'event' && (
         <Handle
           type="target"

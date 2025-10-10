@@ -15,7 +15,8 @@ import '@xyflow/react/dist/style.css';
 
 import BuilderToolbar from '../component/builder/BuilderToolbar';
 import BlocksPalette from '../component/builder/BlocksPalette';
-import CustomNode, { type NodeData } from '../component/builder/CustomNode';
+import BlockDetailsPanel from '../component/builder/BlockDetailsPanel';
+import CustomNode, { type NodeData, type NodeConfig } from '../component/builder/CustomNode';
 
 const nodeTypes = {
   custom: CustomNode,
@@ -29,6 +30,7 @@ export default function Builder() {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<NodeData>>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [reactFlowInstance, setReactFlowInstance] = useState<any>(null);
+  const [selectedNode, setSelectedNode] = useState<Node<NodeData> | null>(null);
 
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
@@ -65,10 +67,13 @@ export default function Builder() {
           label: block.label,
           type: block.type,
           icon: block.icon,
+          blockId: block.id,
+          config: {},
         },
       };
 
       setNodes((nds) => nds.concat(newNode));
+      setSelectedNode(newNode);
     },
     [reactFlowInstance, setNodes]
   );
@@ -82,8 +87,53 @@ export default function Builder() {
     if (confirm('Êtes-vous sûr de vouloir effacer tous les blocs ?')) {
       setNodes([]);
       setEdges([]);
+      setSelectedNode(null);
     }
   };
+
+  const handleNodeClick = useCallback((_event: React.MouseEvent, node: Node<NodeData>) => {
+    setSelectedNode(node);
+  }, []);
+
+  const handlePaneClick = useCallback(() => {
+    setSelectedNode(null);
+  }, []);
+
+  const handleUpdateNodeConfig = useCallback((nodeId: string, config: NodeConfig) => {
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === nodeId) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              config,
+            },
+          };
+        }
+        return node;
+      })
+    );
+
+    setSelectedNode((prev) => {
+      if (prev && prev.id === nodeId) {
+        return {
+          ...prev,
+          data: {
+            ...prev.data,
+            config,
+          },
+        };
+      }
+      return prev;
+    });
+  }, [setNodes]);
+
+  const handleDeleteNode = useCallback((nodeId: string) => {
+    setNodes((nds) => nds.filter((node) => node.id !== nodeId));
+    setEdges((eds) => eds.filter((edge) => edge.source !== nodeId && edge.target !== nodeId));
+    setSelectedNode(null);
+  }, [setNodes, setEdges]);
 
   return (
     <div className="h-screen flex flex-col bg-slate-900">
@@ -102,6 +152,8 @@ export default function Builder() {
             onInit={setReactFlowInstance}
             onDrop={onDrop}
             onDragOver={onDragOver}
+            onNodeClick={handleNodeClick}
+            onPaneClick={handlePaneClick}
             nodeTypes={nodeTypes}
             fitView
             className="bg-slate-900"
@@ -116,6 +168,15 @@ export default function Builder() {
             />
           </ReactFlow>
         </div>
+
+        {selectedNode && (
+          <BlockDetailsPanel
+            node={selectedNode}
+            onClose={() => setSelectedNode(null)}
+            onUpdate={handleUpdateNodeConfig}
+            onDelete={handleDeleteNode}
+          />
+        )}
       </div>
     </div>
   );
