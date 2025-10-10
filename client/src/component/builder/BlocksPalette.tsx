@@ -18,10 +18,6 @@ const blocks: Block[] = [
   { id: 'sendMessage', label: 'Envoyer message', type: 'action', icon: 'message', category: 'actions' },
   { id: 'addRole', label: 'Ajouter rôle', type: 'action', icon: 'user', category: 'actions' },
   { id: 'createChannel', label: 'Créer salon', type: 'action', icon: 'channel', category: 'actions' },
-
-  { id: 'ifUserHasRole', label: 'Si utilisateur a rôle', type: 'condition', icon: 'filter', category: 'conditions' },
-  { id: 'ifMessageContains', label: 'Si message contient', type: 'condition', icon: 'filter', category: 'conditions' },
-  { id: 'ifUserIsAdmin', label: 'Si utilisateur est admin', type: 'condition', icon: 'filter', category: 'conditions' },
 ];
 
 const getBlockIcon = (iconName: string) => {
@@ -60,7 +56,6 @@ export default function BlocksPalette({ onDragStart }: BlocksPaletteProps) {
   const categories: { id: BlockCategory; label: string; icon: typeof FaBolt }[] = [
     { id: 'events', label: 'Événements', icon: FaBolt },
     { id: 'actions', label: 'Actions', icon: FaCheck },
-    { id: 'conditions', label: 'Conditions', icon: FaUserShield },
   ];
 
   return (
