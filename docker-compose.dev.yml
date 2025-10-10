@@ -151,7 +151,7 @@ services:
     restart: unless-stopped
 
   mongodb:
-    image: mongo:7-alpine
+    image: mongo:7
     container_name: hostyourbot-mongodb-dev
     ports:
       - "27017:27017"
