@@ -369,4 +369,68 @@ export class BotDeploymentService {
       throw error;
     }
   }
+
+  async listAllBots(): Promise<Bot[]> {
+    try {
+      const deploymentsList = await this.k8sClient.listDeployments(this.baseNamespace);
+      return deploymentsList.items
+        .filter((d) => d.metadata.labels?.['managed-by'] === 'hostyourbot')
+        .map((d) => this.mapDeploymentToBot(d));
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        return [];
+      }
+      throw error;
+    }
+  }
+
+  async getBotStats(): Promise<{
+    total: number;
+    running: number;
+    stopped: number;
+    error: number;
+  }> {
+    const bots = await this.listAllBots();
+
+    const stats = {
+      total: bots.length,
+      running: bots.filter((b) => b.status === BotStatus.RUNNING).length,
+      stopped: bots.filter((b) => b.status === BotStatus.STOPPED || b.replicas === 0).length,
+      error: bots.filter((b) => b.status === BotStatus.ERROR).length,
+    };
+
+    return stats;
+  }
+
+  async deleteBotAsAdmin(botId: string): Promise<void> {
+    await this.k8sClient.deleteDeployment(botId, this.baseNamespace);
+
+    try {
+      await this.k8sClient.deleteService(botId, this.baseNamespace);
+    } catch {
+    }
+
+    try {
+      await this.k8sClient.deleteConfigMap(`${botId}-code`, this.baseNamespace);
+    } catch {
+    }
+  }
+
+  async stopBotAsAdmin(botId: string): Promise<Bot> {
+    const deployment = await this.k8sClient.scaleDeployment(
+      botId,
+      0,
+      this.baseNamespace
+    );
+    return this.mapDeploymentToBot(deployment);
+  }
+
+  async startBotAsAdmin(botId: string): Promise<Bot> {
+    const deployment = await this.k8sClient.scaleDeployment(
+      botId,
+      1,
+      this.baseNamespace
+    );
+    return this.mapDeploymentToBot(deployment);
+  }
 }

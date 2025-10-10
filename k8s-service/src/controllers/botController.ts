@@ -181,3 +181,63 @@ export const deleteUserBots = async (
     reply.status(400).send({ error: 'Failed to delete user bots', message: error.message });
   }
 };
+
+export const listAllBots = async (
+  request: FastifyRequest,
+  reply: FastifyReply
+) => {
+  try {
+    const bots = await botService.listAllBots();
+    reply.send({ bots, count: bots.length });
+  } catch (error: any) {
+    reply.status(500).send({ error: 'Failed to list all bots', message: error.message });
+  }
+};
+
+export const getBotStats = async (
+  request: FastifyRequest,
+  reply: FastifyReply
+) => {
+  try {
+    const stats = await botService.getBotStats();
+    reply.send(stats);
+  } catch (error: any) {
+    reply.status(500).send({ error: 'Failed to get bot stats', message: error.message });
+  }
+};
+
+export const deleteBotAsAdmin = async (
+  request: FastifyRequest<{ Params: { id: string } }>,
+  reply: FastifyReply
+) => {
+  try {
+    await botService.deleteBotAsAdmin(request.params.id);
+    reply.status(204).send();
+  } catch (error: any) {
+    reply.status(400).send({ error: 'Failed to delete bot', message: error.message });
+  }
+};
+
+export const stopBotAsAdmin = async (
+  request: FastifyRequest<{ Params: { id: string } }>,
+  reply: FastifyReply
+) => {
+  try {
+    const bot = await botService.stopBotAsAdmin(request.params.id);
+    reply.send({ bot });
+  } catch (error: any) {
+    reply.status(400).send({ error: 'Failed to stop bot', message: error.message });
+  }
+};
+
+export const startBotAsAdmin = async (
+  request: FastifyRequest<{ Params: { id: string } }>,
+  reply: FastifyReply
+) => {
+  try {
+    const bot = await botService.startBotAsAdmin(request.params.id);
+    reply.send({ bot });
+  } catch (error: any) {
+    reply.status(400).send({ error: 'Failed to start bot', message: error.message });
+  }
+};
