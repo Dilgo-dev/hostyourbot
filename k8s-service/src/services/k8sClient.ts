@@ -9,6 +9,9 @@ import {
   ConfigMap,
   K8sList,
   K8sResource,
+  Node,
+  NodeMetricsList,
+  PodMetricsList,
 } from '../types/k8s';
 
 export class K8sClient {
@@ -154,5 +157,33 @@ export class K8sClient {
     } catch {
       return false;
     }
+  }
+
+  async listNodes(): Promise<K8sList<Node>> {
+    const response = await this.client.get('/api/v1/nodes');
+    return response.data;
+  }
+
+  async getNode(name: string): Promise<Node> {
+    const response = await this.client.get(`/api/v1/nodes/${name}`);
+    return response.data;
+  }
+
+  async getNodeMetrics(): Promise<NodeMetricsList> {
+    const response = await this.client.get('/apis/metrics.k8s.io/v1beta1/nodes');
+    return response.data;
+  }
+
+  async getPodMetrics(namespace?: string): Promise<PodMetricsList> {
+    const url = namespace
+      ? `/apis/metrics.k8s.io/v1beta1/namespaces/${namespace}/pods`
+      : '/apis/metrics.k8s.io/v1beta1/pods';
+    const response = await this.client.get(url);
+    return response.data;
+  }
+
+  async getAllPods(): Promise<K8sList<Pod>> {
+    const response = await this.client.get('/api/v1/pods');
+    return response.data;
   }
 }
