@@ -7,6 +7,7 @@ import Login from "./page/Login";
 import ForgotPassword from "./page/ForgotPassword";
 import ResetPassword from "./page/ResetPassword";
 import Dashboard from "./page/Dashboard";
+import CreateBotMethod from "./page/CreateBotMethod";
 import CreateBot from "./page/CreateBot";
 import BotDetail from "./page/BotDetail";
 import AccountSettings from "./page/AccountSettings";
@@ -53,6 +54,10 @@ const router = createBrowserRouter([
   {
     path: "/dashboard",
     element: <Dashboard />,
+  },
+  {
+    path: "/dashboard/create/method",
+    element: <CreateBotMethod />,
   },
   {
     path: "/dashboard/create",
