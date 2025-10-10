@@ -142,3 +142,101 @@ export interface K8sList<T extends K8sResource> {
   };
   items: T[];
 }
+
+export interface Node extends K8sResource {
+  kind: 'Node';
+  spec: {
+    podCIDR?: string;
+    taints?: Array<{
+      key: string;
+      value?: string;
+      effect: string;
+    }>;
+  };
+  status: {
+    capacity: {
+      cpu: string;
+      memory: string;
+      'ephemeral-storage': string;
+      pods: string;
+    };
+    allocatable: {
+      cpu: string;
+      memory: string;
+      'ephemeral-storage': string;
+      pods: string;
+    };
+    conditions: Array<{
+      type: string;
+      status: string;
+      lastHeartbeatTime: string;
+      lastTransitionTime: string;
+      reason?: string;
+      message?: string;
+    }>;
+    addresses: Array<{
+      type: string;
+      address: string;
+    }>;
+    nodeInfo: {
+      machineID: string;
+      systemUUID: string;
+      bootID: string;
+      kernelVersion: string;
+      osImage: string;
+      containerRuntimeVersion: string;
+      kubeletVersion: string;
+      kubeProxyVersion: string;
+      operatingSystem: string;
+      architecture: string;
+    };
+  };
+}
+
+export interface NodeMetrics {
+  metadata: {
+    name: string;
+    creationTimestamp: string;
+  };
+  timestamp: string;
+  window: string;
+  usage: {
+    cpu: string;
+    memory: string;
+  };
+}
+
+export interface NodeMetricsList {
+  kind: 'NodeMetricsList';
+  apiVersion: 'metrics.k8s.io/v1beta1';
+  metadata: {
+    selfLink?: string;
+  };
+  items: NodeMetrics[];
+}
+
+export interface PodMetrics {
+  metadata: {
+    name: string;
+    namespace: string;
+    creationTimestamp: string;
+  };
+  timestamp: string;
+  window: string;
+  containers: Array<{
+    name: string;
+    usage: {
+      cpu: string;
+      memory: string;
+    };
+  }>;
+}
+
+export interface PodMetricsList {
+  kind: 'PodMetricsList';
+  apiVersion: 'metrics.k8s.io/v1beta1';
+  metadata: {
+    selfLink?: string;
+  };
+  items: PodMetrics[];
+}

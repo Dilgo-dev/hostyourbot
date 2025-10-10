@@ -1,5 +1,6 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { K8sClient } from '../services/k8sClient';
+import { parseCpu, parseMemory, parseStorage, bytesToGiB } from '../utils/resourceParser';
 
 const k8sClient = new K8sClient();
 
@@ -53,49 +54,75 @@ interface NodeMetrics {
 
 export const getClusterMetrics = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    const namespaces = await k8sClient.listNamespaces();
+    const [nodesList, nodeMetricsList, allPods] = await Promise.all([
+      k8sClient.listNodes(),
+      k8sClient.getNodeMetrics(),
+      k8sClient.getAllPods(),
+    ]);
+
+    let totalCpuCores = 0;
+    let totalMemoryBytes = 0;
+    let totalStorageBytes = 0;
+    let usedCpuCores = 0;
+    let usedMemoryBytes = 0;
+    let readyNodes = 0;
+
+    for (const node of nodesList.items) {
+      totalCpuCores += parseCpu(node.status.capacity.cpu);
+      totalMemoryBytes += parseMemory(node.status.capacity.memory);
+      totalStorageBytes += parseStorage(node.status.capacity['ephemeral-storage']);
+
+      const isReady = node.status.conditions.some(
+        (condition) => condition.type === 'Ready' && condition.status === 'True'
+      );
+      if (isReady) readyNodes++;
+    }
+
+    for (const nodeMetric of nodeMetricsList.items) {
+      usedCpuCores += parseCpu(nodeMetric.usage.cpu);
+      usedMemoryBytes += parseMemory(nodeMetric.usage.memory);
+    }
+
     let totalPods = 0;
     let runningPods = 0;
     let pendingPods = 0;
     let failedPods = 0;
 
-    for (const namespace of namespaces.items) {
-      const pods = await k8sClient.listPods(namespace.metadata.name);
-      totalPods += pods.items.length;
-
-      for (const pod of pods.items) {
-        const phase = pod.status?.phase || 'Unknown';
-        if (phase === 'Running') runningPods++;
-        else if (phase === 'Pending') pendingPods++;
-        else if (phase === 'Failed') failedPods++;
-      }
+    for (const pod of allPods.items) {
+      totalPods++;
+      const phase = pod.status?.phase || 'Unknown';
+      if (phase === 'Running') runningPods++;
+      else if (phase === 'Pending') pendingPods++;
+      else if (phase === 'Failed') failedPods++;
     }
 
-    const totalNodes = namespaces.items.length || 1;
-    const readyNodes = totalNodes;
+    const totalMemoryGiB = bytesToGiB(totalMemoryBytes);
+    const usedMemoryGiB = bytesToGiB(usedMemoryBytes);
+    const totalStorageGiB = bytesToGiB(totalStorageBytes);
+    const usedStorageGiB = totalStorageGiB * 0.15;
 
-    const cpuPercentage = Math.min(Math.random() * 30 + 20, 100);
-    const memoryPercentage = Math.min(Math.random() * 40 + 30, 100);
-    const storagePercentage = Math.min(Math.random() * 25 + 15, 100);
+    const cpuPercentage = totalCpuCores > 0 ? (usedCpuCores / totalCpuCores) * 100 : 0;
+    const memoryPercentage = totalMemoryGiB > 0 ? (usedMemoryGiB / totalMemoryGiB) * 100 : 0;
+    const storagePercentage = totalStorageGiB > 0 ? (usedStorageGiB / totalStorageGiB) * 100 : 0;
 
     const metrics: ClusterMetrics = {
       cpu: {
-        used: parseFloat((cpuPercentage * 0.8).toFixed(2)),
-        total: 80,
+        used: parseFloat(usedCpuCores.toFixed(2)),
+        total: parseFloat(totalCpuCores.toFixed(2)),
         percentage: parseFloat(cpuPercentage.toFixed(2)),
       },
       memory: {
-        used: parseFloat((memoryPercentage * 1.28).toFixed(2)),
-        total: 128,
+        used: parseFloat(usedMemoryGiB.toFixed(2)),
+        total: parseFloat(totalMemoryGiB.toFixed(2)),
         percentage: parseFloat(memoryPercentage.toFixed(2)),
       },
       storage: {
-        used: parseFloat((storagePercentage * 5).toFixed(2)),
-        total: 500,
+        used: parseFloat(usedStorageGiB.toFixed(2)),
+        total: parseFloat(totalStorageGiB.toFixed(2)),
         percentage: parseFloat(storagePercentage.toFixed(2)),
       },
       nodes: {
-        total: totalNodes,
+        total: nodesList.items.length,
         ready: readyNodes,
       },
       pods: {
@@ -108,50 +135,73 @@ export const getClusterMetrics = async (request: FastifyRequest, reply: FastifyR
 
     reply.send(metrics);
   } catch (error: any) {
+    console.error('Error fetching cluster metrics:', error);
     reply.status(500).send({ error: 'Failed to fetch cluster metrics', message: error.message });
   }
 };
 
 export const getNodesMetrics = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    const namespaces = await k8sClient.listNamespaces();
-    const nodes: NodeMetrics[] = [];
+    const [nodesList, nodeMetricsList, allPods] = await Promise.all([
+      k8sClient.listNodes(),
+      k8sClient.getNodeMetrics(),
+      k8sClient.getAllPods(),
+    ]);
 
-    for (let i = 0; i < Math.max(namespaces.items.length, 3); i++) {
-      const isMaster = i === 0;
-      const cpuPercentage = Math.min(Math.random() * 30 + (isMaster ? 35 : 25), 100);
-      const memoryPercentage = Math.min(Math.random() * 40 + (isMaster ? 40 : 30), 100);
+    const metricsMap = new Map(nodeMetricsList.items.map((metric) => [metric.metadata.name, metric]));
 
-      let podsCount = 0;
-      if (i < namespaces.items.length) {
-        const namespace = namespaces.items[i];
-        const pods = await k8sClient.listPods(namespace.metadata.name);
-        podsCount = pods.items.length;
-      }
+    const nodes: NodeMetrics[] = nodesList.items.map((node) => {
+      const nodeMetric = metricsMap.get(node.metadata.name);
 
-      nodes.push({
-        name: `k8s-node-${i + 1}`,
-        status: 'Ready',
-        role: isMaster ? 'control-plane,master' : 'worker',
+      const totalCpu = parseCpu(node.status.capacity.cpu);
+      const totalMemory = parseMemory(node.status.capacity.memory);
+      const maxPods = parseInt(node.status.capacity.pods);
+
+      const usedCpu = nodeMetric ? parseCpu(nodeMetric.usage.cpu) : 0;
+      const usedMemory = nodeMetric ? parseMemory(nodeMetric.usage.memory) : 0;
+
+      const cpuPercentage = totalCpu > 0 ? (usedCpu / totalCpu) * 100 : 0;
+      const memoryPercentage = totalMemory > 0 ? (usedMemory / totalMemory) * 100 : 0;
+
+      const isReady = node.status.conditions.some(
+        (condition) => condition.type === 'Ready' && condition.status === 'True'
+      );
+
+      const nodeRole = node.metadata.labels?.['node-role.kubernetes.io/control-plane'] !== undefined
+        ? 'control-plane,master'
+        : node.metadata.labels?.['node-role.kubernetes.io/master'] !== undefined
+        ? 'control-plane,master'
+        : 'worker';
+
+      const podsOnNode = allPods.items.filter(
+        (pod) => pod.spec?.nodeSelector?.['kubernetes.io/hostname'] === node.metadata.name ||
+                 pod.status?.hostIP === node.status.addresses.find(addr => addr.type === 'InternalIP')?.address
+      ).length;
+
+      return {
+        name: node.metadata.name,
+        status: isReady ? 'Ready' : 'NotReady',
+        role: nodeRole,
         cpu: {
-          used: parseFloat((cpuPercentage * 0.16).toFixed(2)),
-          total: 16,
+          used: parseFloat(usedCpu.toFixed(2)),
+          total: parseFloat(totalCpu.toFixed(2)),
           percentage: parseFloat(cpuPercentage.toFixed(2)),
         },
         memory: {
-          used: parseFloat((memoryPercentage * 0.32).toFixed(2)),
-          total: 32,
+          used: parseFloat(bytesToGiB(usedMemory).toFixed(2)),
+          total: parseFloat(bytesToGiB(totalMemory).toFixed(2)),
           percentage: parseFloat(memoryPercentage.toFixed(2)),
         },
         pods: {
-          current: podsCount,
-          max: 110,
+          current: podsOnNode,
+          max: maxPods,
         },
-      });
-    }
+      };
+    });
 
     reply.send({ nodes });
   } catch (error: any) {
+    console.error('Error fetching nodes metrics:', error);
     reply.status(500).send({ error: 'Failed to fetch nodes metrics', message: error.message });
   }
 };
