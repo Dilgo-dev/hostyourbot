@@ -16,6 +16,7 @@ import AdminBots from "./page/admin/AdminBots";
 import AdminSystem from "./page/admin/AdminSystem";
 import AdminLogs from "./page/admin/AdminLogs";
 import AdminConfig from "./page/admin/AdminConfig";
+import Builder from "./page/Builder";
 import NotFound from "./page/NotFound";
 
 const router = createBrowserRouter([
@@ -88,6 +89,10 @@ const router = createBrowserRouter([
   {
     path: "/dashboard/admin/config",
     element: <AdminConfig />,
+  },
+  {
+    path: "/builder",
+    element: <Builder />,
   },
 ]);
 
