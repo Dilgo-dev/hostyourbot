@@ -10,6 +10,11 @@ import {
   startBot,
   restartBot,
   getBotLogs,
+  listAllBots,
+  getBotStats,
+  deleteBotAsAdmin,
+  stopBotAsAdmin,
+  startBotAsAdmin,
 } from '../controllers/botController';
 
 export default async function botRoutes(fastify: FastifyInstance) {
@@ -23,4 +28,10 @@ export default async function botRoutes(fastify: FastifyInstance) {
   fastify.post('/bots/:id/start', startBot);
   fastify.post('/bots/:id/restart', restartBot);
   fastify.get('/bots/:id/logs', getBotLogs);
+
+  fastify.get('/admin/bots', listAllBots);
+  fastify.get('/admin/bots/stats', getBotStats);
+  fastify.delete('/admin/bots/:id', deleteBotAsAdmin);
+  fastify.post('/admin/bots/:id/stop', stopBotAsAdmin);
+  fastify.post('/admin/bots/:id/start', startBotAsAdmin);
 }

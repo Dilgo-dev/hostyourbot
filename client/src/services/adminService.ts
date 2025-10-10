@@ -1,4 +1,4 @@
-import { authApi } from './api';
+import { authApi, k8sApi } from './api';
 
 export interface AdminUser {
   id: string;
@@ -32,6 +32,32 @@ export interface UserStatsResponse {
   withDiscord: number;
   withEmail: number;
   with2FA: number;
+}
+
+export interface AdminBot {
+  id: string;
+  name: string;
+  language: 'nodejs' | 'python' | 'go' | 'rust';
+  version: string;
+  status: 'running' | 'stopped' | 'error' | 'deploying';
+  createdAt: string;
+  updatedAt?: string;
+  uptime?: number;
+  image?: string;
+  namespace?: string;
+  userId?: string;
+  podInfo?: {
+    ready: number;
+    total: number;
+  };
+  replicas?: number;
+}
+
+export interface BotStatsResponse {
+  total: number;
+  running: number;
+  stopped: number;
+  error: number;
 }
 
 export const adminService = {
@@ -78,5 +104,29 @@ export const adminService = {
   async getUserStats(): Promise<UserStatsResponse> {
     const response = await authApi.get<UserStatsResponse>('/api/admin/users/stats');
     return response.data;
+  },
+
+  async getBots(): Promise<AdminBot[]> {
+    const response = await k8sApi.get<{ bots: AdminBot[] }>('/api/v1/admin/bots');
+    return response.data.bots;
+  },
+
+  async getBotStats(): Promise<BotStatsResponse> {
+    const response = await k8sApi.get<BotStatsResponse>('/api/v1/admin/bots/stats');
+    return response.data;
+  },
+
+  async startBot(id: string): Promise<{ bot: AdminBot }> {
+    const response = await k8sApi.post<{ bot: AdminBot }>(`/api/v1/admin/bots/${id}/start`);
+    return response.data;
+  },
+
+  async stopBot(id: string): Promise<{ bot: AdminBot }> {
+    const response = await k8sApi.post<{ bot: AdminBot }>(`/api/v1/admin/bots/${id}/stop`);
+    return response.data;
+  },
+
+  async deleteBot(id: string): Promise<void> {
+    await k8sApi.delete(`/api/v1/admin/bots/${id}`);
   },
 };
