@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FaArrowLeft, FaArrowRight } from 'react-icons/fa';
+import { FaWandMagicSparkles } from 'react-icons/fa6';
 import DashboardLayout from '../component/dashboard/DashboardLayout';
 import StepIndicator from '../component/createbot/StepIndicator';
 import LanguageSelector from '../component/createbot/LanguageSelector';
@@ -14,6 +15,7 @@ import { useAuth } from '../context/AuthContext';
 
 export default function CreateBot() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -25,8 +27,21 @@ export default function CreateBot() {
   const [zipFile, setZipFile] = useState<File | null>(null);
   const [startCommand, setStartCommand] = useState('');
   const [envVars, setEnvVars] = useState<EnvVar[]>([]);
+  const [fromBuilder, setFromBuilder] = useState(false);
 
   const steps = ['Configuration', 'Fichiers', 'Commande', 'Variables', 'Récapitulatif'];
+
+  useEffect(() => {
+    const state = location.state as any;
+    if (state?.generatedZip && state?.fromBuilder) {
+      setZipFile(state.generatedZip);
+      setFromBuilder(true);
+      setName('Mon Bot Discord');
+      setLanguage('nodejs');
+      setVersion('LTS');
+      setStartCommand('node index.js');
+    }
+  }, [location]);
 
   const handleNext = () => {
     if (currentStep === 1 && !name.trim()) {
@@ -134,7 +149,15 @@ export default function CreateBot() {
         </button>
 
         <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-8">
-          <h1 className="text-white text-2xl font-bold mb-8">Créer un nouveau bot</h1>
+          <div className="flex items-center justify-between mb-8">
+            <h1 className="text-white text-2xl font-bold">Créer un nouveau bot</h1>
+            {fromBuilder && (
+              <div className="flex items-center gap-2 px-4 py-2 bg-purple-600/20 border border-purple-500/30 rounded-lg">
+                <FaWandMagicSparkles className="text-purple-400" />
+                <span className="text-purple-400 text-sm font-medium">Généré depuis le Builder</span>
+              </div>
+            )}
+          </div>
 
           <StepIndicator currentStep={currentStep} totalSteps={steps.length} steps={steps} />
 

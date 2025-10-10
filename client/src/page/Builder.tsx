@@ -1,4 +1,5 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ReactFlow,
   Controls,
@@ -17,6 +18,8 @@ import BuilderToolbar from '../component/builder/BuilderToolbar';
 import BlocksPalette from '../component/builder/BlocksPalette';
 import BlockDetailsPanel from '../component/builder/BlockDetailsPanel';
 import CustomNode, { type NodeData, type NodeConfig } from '../component/builder/CustomNode';
+import { builderService } from '../services/builderService';
+import { useAuth } from '../context/AuthContext';
 
 const nodeTypes = {
   custom: CustomNode,
@@ -26,11 +29,21 @@ let id = 0;
 const getId = () => `node_${id++}`;
 
 export default function Builder() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { user } = useAuth();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<NodeData>>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [reactFlowInstance, setReactFlowInstance] = useState<any>(null);
   const [selectedNode, setSelectedNode] = useState<Node<NodeData> | null>(null);
+  const [workflowName, setWorkflowName] = useState('');
+  const [currentWorkflowId, setCurrentWorkflowId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const isDeployMode = searchParams.get('mode') === 'deploy';
 
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
@@ -135,9 +148,94 @@ export default function Builder() {
     setSelectedNode(null);
   }, [setNodes, setEdges]);
 
+  const handleSave = async () => {
+    if (!user) return;
+
+    if (!workflowName.trim()) {
+      const name = prompt('Nom du workflow :');
+      if (!name) return;
+      setWorkflowName(name);
+    }
+
+    setSaving(true);
+    setError(null);
+
+    try {
+      if (currentWorkflowId) {
+        await builderService.updateWorkflow(currentWorkflowId, user.id, {
+          name: workflowName,
+          nodes,
+          edges,
+        });
+      } else {
+        const workflow = await builderService.createWorkflow({
+          name: workflowName,
+          userId: user.id,
+          nodes,
+          edges,
+          botType: 'discord',
+        });
+        setCurrentWorkflowId(workflow._id || null);
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Erreur lors de la sauvegarde');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleGenerateAndDeploy = async () => {
+    if (!user) return;
+
+    if (nodes.length === 0) {
+      setError('Ajoutez des blocs avant de générer');
+      return;
+    }
+
+    const eventNodes = nodes.filter(n => n.data.type === 'event');
+    if (eventNodes.length === 0) {
+      setError('Ajoutez au moins un événement (bloc violet)');
+      return;
+    }
+
+    setGenerating(true);
+    setError(null);
+
+    try {
+      const zipBlob = await builderService.generateDirect({
+        nodes,
+        edges,
+      });
+
+      const file = new File([zipBlob], 'discord-bot.zip', { type: 'application/zip' });
+
+      navigate('/dashboard/create', {
+        state: {
+          generatedZip: file,
+          fromBuilder: true,
+        },
+      });
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Erreur lors de la génération');
+      setGenerating(false);
+    }
+  };
+
   return (
     <div className="h-screen flex flex-col bg-slate-900">
-      <BuilderToolbar onClear={handleClear} />
+      <BuilderToolbar
+        onClear={handleClear}
+        onSave={isDeployMode ? handleSave : undefined}
+        onGenerate={isDeployMode ? handleGenerateAndDeploy : undefined}
+        saving={saving}
+        generating={generating}
+      />
+
+      {error && (
+        <div className="bg-red-600/20 border-b border-red-500/30 text-red-400 px-6 py-3 text-sm">
+          {error}
+        </div>
+      )}
 
       <div className="flex-1 flex overflow-hidden">
         <BlocksPalette onDragStart={onDragStart} />

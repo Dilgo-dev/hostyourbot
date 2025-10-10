@@ -105,7 +105,7 @@ export default function Dashboard() {
             Actualiser
           </button>
           <button
-            onClick={() => navigate('/dashboard/create')}
+            onClick={() => navigate('/dashboard/create/method')}
             className="flex items-center gap-2 px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/50"
           >
             <FaPlus />
