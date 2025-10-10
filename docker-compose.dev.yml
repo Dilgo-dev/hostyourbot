@@ -150,6 +150,41 @@ services:
       - k8s-service
     restart: unless-stopped
 
+  mongodb:
+    image: mongo:7-alpine
+    container_name: hostyourbot-mongodb-dev
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  builder-service:
+    build:
+      context: ./builder-service
+      target: development
+    container_name: hostyourbot-builder-service-dev
+    ports:
+      - "${BUILDER_PORT}:${BUILDER_PORT}"
+    volumes:
+      - ./builder-service:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=${BUILDER_NODE_ENV}
+      - PORT=${BUILDER_PORT}
+      - MONGODB_URI=${MONGODB_URI}
+      - CLIENT_URL=${CLIENT_URL}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   postgres-auth-data:
   logs-data:
+  mongodb-data:
