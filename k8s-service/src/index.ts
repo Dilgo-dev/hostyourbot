@@ -7,6 +7,7 @@ import namespaceRoutes from './routes/namespaceRoutes';
 import podRoutes from './routes/podRoutes';
 import deploymentRoutes from './routes/deploymentRoutes';
 import serviceRoutes from './routes/serviceRoutes';
+import metricsRoutes from './routes/metricsRoutes';
 import { K8sClient } from './services/k8sClient';
 import { K8sGrpcServer } from './services/grpcServer';
 
@@ -48,6 +49,7 @@ async function start() {
     await fastify.register(podRoutes, { prefix: '/api/v1/k8s' });
     await fastify.register(deploymentRoutes, { prefix: '/api/v1/k8s' });
     await fastify.register(serviceRoutes, { prefix: '/api/v1/k8s' });
+    await fastify.register(metricsRoutes, { prefix: '/api/v1' });
 
     await fastify.listen({ port: config.port, host: '0.0.0.0' });
     await grpcServer.start(config.grpcPort);
