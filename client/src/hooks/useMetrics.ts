@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { metricsService, ClusterMetrics, NodeMetrics } from '../services/metricsService';
+import { metricsService } from '../services/metricsService';
+import type { ClusterMetrics, NodeMetrics } from '../services/metricsService';
 
 interface MetricsHistory {
   time: string;

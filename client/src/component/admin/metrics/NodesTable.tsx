@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { FaCheckCircle, FaServer } from 'react-icons/fa';
-import { NodeMetrics } from '../../../services/metricsService';
+import type { NodeMetrics } from '../../../services/metricsService';
 
 interface NodesTableProps {
   nodes: NodeMetrics[];
