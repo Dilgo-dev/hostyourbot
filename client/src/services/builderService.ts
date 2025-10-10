@@ -64,39 +64,39 @@ export interface GenerateRequest {
 
 class BuilderService {
   async createWorkflow(data: CreateWorkflowRequest): Promise<Workflow> {
-    const response = await builderApi.post('/workflows', data);
+    const response = await builderApi.post('/api/workflows', data);
     return response.data.workflow;
   }
 
   async getWorkflows(userId: string): Promise<Workflow[]> {
-    const response = await builderApi.get('/workflows', {
+    const response = await builderApi.get('/api/workflows', {
       params: { userId },
     });
     return response.data.workflows;
   }
 
   async getWorkflow(id: string, userId: string): Promise<Workflow> {
-    const response = await builderApi.get(`/workflows/${id}`, {
+    const response = await builderApi.get(`/api/workflows/${id}`, {
       params: { userId },
     });
     return response.data.workflow;
   }
 
   async updateWorkflow(id: string, userId: string, data: Partial<Workflow>): Promise<Workflow> {
-    const response = await builderApi.put(`/workflows/${id}`, data, {
+    const response = await builderApi.put(`/api/workflows/${id}`, data, {
       params: { userId },
     });
     return response.data.workflow;
   }
 
   async deleteWorkflow(id: string, userId: string): Promise<void> {
-    await builderApi.delete(`/workflows/${id}`, {
+    await builderApi.delete(`/api/workflows/${id}`, {
       params: { userId },
     });
   }
 
   async generateFromWorkflow(id: string, userId: string): Promise<Blob> {
-    const response = await builderApi.post(`/workflows/${id}/generate`, null, {
+    const response = await builderApi.post(`/api/workflows/${id}/generate`, null, {
       params: { userId },
       responseType: 'blob',
     });
@@ -104,7 +104,7 @@ class BuilderService {
   }
 
   async generateDirect(data: GenerateRequest): Promise<Blob> {
-    const response = await builderApi.post('/generate', data, {
+    const response = await builderApi.post('/api/generate', data, {
       responseType: 'blob',
     });
     return response.data;
