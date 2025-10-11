@@ -6,6 +6,7 @@ import LanguageSelector from '../createbot/LanguageSelector';
 import FileUploader from '../createbot/FileUploader';
 import CommandInput from '../createbot/CommandInput';
 import EnvVarEditor from '../createbot/EnvVarEditor';
+import UpdateProgressScreen, { type UpdateStage } from './UpdateProgressScreen';
 
 interface BotUpdateModalProps {
   isOpen: boolean;
@@ -20,6 +21,7 @@ export default function BotUpdateModal({ isOpen, onClose, bot, onUpdate }: BotUp
   const [activeTab, setActiveTab] = useState<Tab>('config');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [updateStage, setUpdateStage] = useState<UpdateStage | null>(null);
 
   const [name, setName] = useState(bot.name);
   const [language, setLanguage] = useState(bot.language);
@@ -38,6 +40,7 @@ export default function BotUpdateModal({ isOpen, onClose, bot, onUpdate }: BotUp
       setEnvVars([]);
       setError(null);
       setActiveTab('config');
+      setUpdateStage(null);
     }
   }, [isOpen, bot]);
 
@@ -47,6 +50,9 @@ export default function BotUpdateModal({ isOpen, onClose, bot, onUpdate }: BotUp
     setLoading(true);
 
     try {
+      setUpdateStage('validation');
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
       const updateData: Partial<CreateBotRequest> = {};
 
       if (name !== bot.name) {
@@ -79,10 +85,24 @@ export default function BotUpdateModal({ isOpen, onClose, bot, onUpdate }: BotUp
       if (Object.keys(updateData).length === 0) {
         setError('Aucune modification détectée. Veuillez modifier au moins un champ.');
         setLoading(false);
+        setUpdateStage(null);
         return;
       }
 
+      if (updateData.zipFile) {
+        setUpdateStage('upload');
+        await new Promise((resolve) => setTimeout(resolve, 800));
+      }
+
+      setUpdateStage('config');
       await onUpdate(updateData);
+
+      setUpdateStage('restart');
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      setUpdateStage('complete');
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
       onClose();
     } catch (err: any) {
       setError(err.message || 'Erreur lors de la mise à jour du bot');
@@ -213,32 +233,40 @@ export default function BotUpdateModal({ isOpen, onClose, bot, onUpdate }: BotUp
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-6">
-              {error && (
-                <div className="bg-red-600/20 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg">
-                  {error}
+            {updateStage ? (
+              <UpdateProgressScreen
+                currentStage={updateStage}
+                hasZipFile={!!zipFile}
+                error={error}
+              />
+            ) : (
+              <form onSubmit={handleSubmit} className="p-6 space-y-6">
+                {error && (
+                  <div className="bg-red-600/20 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg">
+                    {error}
+                  </div>
+                )}
+
+                <div className="min-h-[400px]">{renderTabContent()}</div>
+
+                <div className="flex gap-4 pt-4 border-t border-slate-700">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="flex-1 px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-semibold transition-colors"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="flex-1 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loading ? 'Mise à jour...' : 'Mettre à jour'}
+                  </button>
                 </div>
-              )}
-
-              <div className="min-h-[400px]">{renderTabContent()}</div>
-
-              <div className="flex gap-4 pt-4 border-t border-slate-700">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="flex-1 px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-semibold transition-colors"
-                >
-                  Annuler
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="flex-1 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? 'Mise à jour...' : 'Mettre à jour'}
-                </button>
-              </div>
-            </form>
+              </form>
+            )}
           </motion.div>
         </motion.div>
       )}
