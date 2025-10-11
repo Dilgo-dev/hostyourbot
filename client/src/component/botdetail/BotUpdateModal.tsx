@@ -76,6 +76,12 @@ export default function BotUpdateModal({ isOpen, onClose, bot, onUpdate }: BotUp
         }
       }
 
+      if (Object.keys(updateData).length === 0) {
+        setError('Aucune modification détectée. Veuillez modifier au moins un champ.');
+        setLoading(false);
+        return;
+      }
+
       await onUpdate(updateData);
       onClose();
     } catch (err: any) {

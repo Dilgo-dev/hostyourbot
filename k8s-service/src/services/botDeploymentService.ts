@@ -519,6 +519,18 @@ export class BotDeploymentService {
       }
     }
 
+    const hasChanges = updateData.zipFileBase64 ||
+                       updateData.language ||
+                       updateData.version ||
+                       updateData.workflowId ||
+                       updateData.image ||
+                       updateData.env ||
+                       updateData.startCommand;
+
+    if (!hasChanges) {
+      return await this.getBot(botId, updateData.userId);
+    }
+
     if (updateData.zipFileBase64) {
       const configMapName = `${botId}-code`;
 
