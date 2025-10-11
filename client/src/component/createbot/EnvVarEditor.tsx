@@ -15,7 +15,7 @@ export default function EnvVarEditor({ envVars, onEnvVarsChange }: EnvVarEditorP
     if (mode === 'text') {
       setTextValue(envVarsToText(envVars));
     }
-  }, [envVars, mode]);
+  }, [mode]);
 
   const parseEnvText = (text: string): EnvVar[] => {
     return text
