@@ -174,12 +174,64 @@ export class BotDeploymentService {
     }
   }
 
-  private mapDeploymentToBot(deployment: Deployment): Bot {
+  private async calculateBotUptime(botId: string): Promise<number | undefined> {
+    try {
+      const pods = await this.k8sClient.listPods(this.baseNamespace);
+      const botPods = pods.items.filter(
+        (pod) => pod.metadata.labels?.app === botId && pod.status?.phase === 'Running'
+      );
+
+      if (botPods.length === 0 || !botPods[0].status?.startTime) {
+        return undefined;
+      }
+
+      const startTime = new Date(botPods[0].status.startTime).getTime();
+      const now = Date.now();
+      const uptimeSeconds = Math.floor((now - startTime) / 1000);
+
+      return uptimeSeconds > 0 ? uptimeSeconds : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  private getLastUpdateTime(deployment: Deployment): string | undefined {
+    if (!deployment.status?.conditions || deployment.status.conditions.length === 0) {
+      return undefined;
+    }
+
+    const progressingCondition = deployment.status.conditions.find(
+      (condition) => condition.type === 'Progressing'
+    );
+
+    if (progressingCondition?.lastUpdateTime) {
+      return progressingCondition.lastUpdateTime;
+    }
+
+    if (progressingCondition?.lastTransitionTime) {
+      return progressingCondition.lastTransitionTime;
+    }
+
+    const latestCondition = deployment.status.conditions
+      .filter((c) => c.lastUpdateTime || c.lastTransitionTime)
+      .sort((a, b) => {
+        const timeA = new Date(a.lastUpdateTime || a.lastTransitionTime || 0).getTime();
+        const timeB = new Date(b.lastUpdateTime || b.lastTransitionTime || 0).getTime();
+        return timeB - timeA;
+      })[0];
+
+    return latestCondition?.lastUpdateTime || latestCondition?.lastTransitionTime;
+  }
+
+  private async mapDeploymentToBot(deployment: Deployment): Promise<Bot> {
     const status = deployment.status?.availableReplicas
       ? BotStatus.RUNNING
       : deployment.status?.replicas
       ? BotStatus.PENDING
       : BotStatus.UNKNOWN;
+
+    const uptime = await this.calculateBotUptime(deployment.metadata.name);
+    const updatedAt = this.getLastUpdateTime(deployment);
 
     return {
       id: deployment.metadata.name,
@@ -193,6 +245,8 @@ export class BotDeploymentService {
       userId: deployment.metadata.labels?.['user-id'],
       workflowId: deployment.metadata.labels?.['workflow-id'],
       createdAt: deployment.metadata.creationTimestamp || new Date().toISOString(),
+      updatedAt,
+      uptime,
       podInfo: {
         ready: deployment.status?.readyReplicas || 0,
         total: deployment.spec.replicas,
@@ -238,23 +292,23 @@ export class BotDeploymentService {
       );
     }
 
-    return this.mapDeploymentToBot(deployment);
+    return await this.mapDeploymentToBot(deployment);
   }
 
   async listBots(userId?: string): Promise<Bot[]> {
     try {
       const deploymentsList = await this.k8sClient.listDeployments(this.baseNamespace);
-      return deploymentsList.items
-        .filter((d) => {
-          const isManagedByHostYourBot = d.metadata.labels?.['managed-by'] === 'hostyourbot';
-          if (!isManagedByHostYourBot) return false;
+      const filteredDeployments = deploymentsList.items.filter((d) => {
+        const isManagedByHostYourBot = d.metadata.labels?.['managed-by'] === 'hostyourbot';
+        if (!isManagedByHostYourBot) return false;
 
-          if (userId) {
-            return d.metadata.labels?.['user-id'] === userId;
-          }
-          return true;
-        })
-        .map((d) => this.mapDeploymentToBot(d));
+        if (userId) {
+          return d.metadata.labels?.['user-id'] === userId;
+        }
+        return true;
+      });
+
+      return Promise.all(filteredDeployments.map((d) => this.mapDeploymentToBot(d)));
     } catch (error: any) {
       if (error.response?.status === 404) {
         return [];
@@ -265,7 +319,7 @@ export class BotDeploymentService {
 
   async getBot(botId: string, userId?: string): Promise<Bot> {
     const deployment = await this.k8sClient.getDeployment(botId, this.baseNamespace);
-    const bot = this.mapDeploymentToBot(deployment);
+    const bot = await this.mapDeploymentToBot(deployment);
 
     if (userId && bot.userId !== userId) {
       throw new Error('Unauthorized: You do not have access to this bot');
@@ -308,7 +362,7 @@ export class BotDeploymentService {
       replicas,
       this.baseNamespace
     );
-    return this.mapDeploymentToBot(deployment);
+    return await this.mapDeploymentToBot(deployment);
   }
 
   async stopBot(botId: string, userId?: string): Promise<Bot> {
@@ -332,7 +386,7 @@ export class BotDeploymentService {
     const deployment = await this.k8sClient.getDeployment(botId, this.baseNamespace);
     const recreated = await this.k8sClient.createDeployment(deployment, this.baseNamespace);
 
-    return this.mapDeploymentToBot(recreated);
+    return await this.mapDeploymentToBot(recreated);
   }
 
   async getBotLogs(botId: string, tailLines?: number, userId?: string): Promise<string> {
@@ -378,9 +432,10 @@ export class BotDeploymentService {
   async listAllBots(): Promise<Bot[]> {
     try {
       const deploymentsList = await this.k8sClient.listDeployments(this.baseNamespace);
-      return deploymentsList.items
-        .filter((d) => d.metadata.labels?.['managed-by'] === 'hostyourbot')
-        .map((d) => this.mapDeploymentToBot(d));
+      const filteredDeployments = deploymentsList.items.filter(
+        (d) => d.metadata.labels?.['managed-by'] === 'hostyourbot'
+      );
+      return Promise.all(filteredDeployments.map((d) => this.mapDeploymentToBot(d)));
     } catch (error: any) {
       if (error.response?.status === 404) {
         return [];
@@ -427,7 +482,7 @@ export class BotDeploymentService {
       0,
       this.baseNamespace
     );
-    return this.mapDeploymentToBot(deployment);
+    return await this.mapDeploymentToBot(deployment);
   }
 
   async startBotAsAdmin(botId: string): Promise<Bot> {
@@ -436,6 +491,6 @@ export class BotDeploymentService {
       1,
       this.baseNamespace
     );
-    return this.mapDeploymentToBot(deployment);
+    return await this.mapDeploymentToBot(deployment);
   }
 }

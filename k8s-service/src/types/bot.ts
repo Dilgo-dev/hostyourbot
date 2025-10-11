@@ -44,6 +44,7 @@ export interface Bot {
   workflowId?: string;
   createdAt: string;
   updatedAt?: string;
+  uptime?: number;
   podInfo?: {
     ready: number;
     total: number;

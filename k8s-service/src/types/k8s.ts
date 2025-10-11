@@ -77,6 +77,14 @@ export interface Deployment extends K8sResource {
     updatedReplicas?: number;
     readyReplicas?: number;
     availableReplicas?: number;
+    conditions?: Array<{
+      type: string;
+      status: string;
+      lastUpdateTime?: string;
+      lastTransitionTime?: string;
+      reason?: string;
+      message?: string;
+    }>;
   };
 }
 
