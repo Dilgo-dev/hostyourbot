@@ -7,6 +7,7 @@ interface UpdateProgressScreenProps {
   currentStage: UpdateStage;
   hasZipFile: boolean;
   error?: string | null;
+  onContinue?: () => void;
 }
 
 interface Step {
