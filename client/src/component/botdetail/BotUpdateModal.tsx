@@ -7,6 +7,7 @@ import FileUploader from '../createbot/FileUploader';
 import CommandInput from '../createbot/CommandInput';
 import EnvVarEditor from '../createbot/EnvVarEditor';
 import UpdateProgressScreen, { type UpdateStage } from './UpdateProgressScreen';
+import { useBotStatusPolling } from '../../hooks/useBotStatusPolling';
 
 interface BotUpdateModalProps {
   isOpen: boolean;
@@ -22,6 +23,7 @@ export default function BotUpdateModal({ isOpen, onClose, bot, onUpdate }: BotUp
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [updateStage, setUpdateStage] = useState<UpdateStage | null>(null);
+  const [pollingEnabled, setPollingEnabled] = useState(false);
 
   const [name, setName] = useState(bot.name);
   const [language, setLanguage] = useState(bot.language);
@@ -29,6 +31,25 @@ export default function BotUpdateModal({ isOpen, onClose, bot, onUpdate }: BotUp
   const [zipFile, setZipFile] = useState<File | null>(null);
   const [startCommand, setStartCommand] = useState('');
   const [envVars, setEnvVars] = useState<EnvVar[]>([]);
+
+  useBotStatusPolling({
+    botId: bot.id,
+    enabled: pollingEnabled,
+    onStageChange: (newStage) => {
+      setUpdateStage(newStage);
+    },
+    onComplete: () => {
+      setPollingEnabled(false);
+      setLoading(false);
+      setTimeout(() => onClose(), 1000);
+    },
+    onError: (err) => {
+      setError(err);
+      setPollingEnabled(false);
+      setLoading(false);
+    },
+    pollInterval: 1000,
+  });
 
   useEffect(() => {
     if (isOpen) {
@@ -51,7 +72,6 @@ export default function BotUpdateModal({ isOpen, onClose, bot, onUpdate }: BotUp
 
     try {
       setUpdateStage('validation');
-      await new Promise((resolve) => setTimeout(resolve, 500));
 
       const updateData: Partial<CreateBotRequest> = {};
 
@@ -91,23 +111,16 @@ export default function BotUpdateModal({ isOpen, onClose, bot, onUpdate }: BotUp
 
       if (updateData.zipFile) {
         setUpdateStage('upload');
-        await new Promise((resolve) => setTimeout(resolve, 800));
       }
 
       setUpdateStage('config');
       await onUpdate(updateData);
 
-      setUpdateStage('restart');
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      setUpdateStage('complete');
-      await new Promise((resolve) => setTimeout(resolve, 800));
-
-      onClose();
+      setPollingEnabled(true);
     } catch (err: any) {
       setError(err.message || 'Erreur lors de la mise à jour du bot');
-    } finally {
       setLoading(false);
+      setUpdateStage(null);
     }
   };
 

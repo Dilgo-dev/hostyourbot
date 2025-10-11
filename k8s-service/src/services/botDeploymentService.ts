@@ -1,6 +1,6 @@
 import { K8sClient } from './k8sClient';
 import { Deployment, Container, Service, ConfigMap, Volume, VolumeMount } from '../types/k8s';
-import { Bot, BotConfig, BotStatus, BotType } from '../types/bot';
+import { Bot, BotConfig, BotStatus, BotType, BotDetailedStatus, UpdateStage } from '../types/bot';
 
 export class BotDeploymentService {
   private k8sClient: K8sClient;
@@ -637,5 +637,105 @@ export class BotDeploymentService {
     );
 
     return await this.mapDeploymentToBot(updatedDeployment);
+  }
+
+  private calculatePodAge(startTime?: string): number | undefined {
+    if (!startTime) return undefined;
+    const start = new Date(startTime).getTime();
+    const now = Date.now();
+    return Math.floor((now - start) / 1000);
+  }
+
+  private determineUpdateStage(deployment: Deployment, pods: any[]): UpdateStage {
+    if (pods.length === 0) {
+      return 'config';
+    }
+
+    if (deployment.metadata.generation !== deployment.status?.observedGeneration) {
+      return 'config';
+    }
+
+    const hasRestartingPods = pods.some(
+      (p) =>
+        p.status?.phase === 'Pending' ||
+        p.status?.phase === 'ContainerCreating' ||
+        p.status?.containerStatuses?.[0]?.state?.waiting
+    );
+
+    if (hasRestartingPods) {
+      return 'restart';
+    }
+
+    const allPodsReady = pods.every(
+      (p) =>
+        p.status?.phase === 'Running' &&
+        p.status?.conditions?.find((c: any) => c.type === 'Ready')?.status === 'True'
+    );
+
+    if (allPodsReady && deployment.status?.readyReplicas === deployment.spec.replicas) {
+      return 'complete';
+    }
+
+    const hasErrorPods = pods.some(
+      (p) =>
+        p.status?.phase === 'Failed' ||
+        p.status?.containerStatuses?.[0]?.state?.terminated?.reason === 'Error'
+    );
+
+    if (hasErrorPods) {
+      return 'error';
+    }
+
+    return 'restart';
+  }
+
+  async getBotDetailedStatus(botId: string, userId?: string): Promise<BotDetailedStatus> {
+    if (userId) {
+      const bot = await this.getBot(botId, userId);
+      if (bot.userId !== userId) {
+        throw new Error('Unauthorized: You do not have access to this bot');
+      }
+    }
+
+    const deployment = await this.k8sClient.getDeployment(botId, this.baseNamespace);
+
+    const pods = await this.k8sClient.listPods(this.baseNamespace);
+    const botPods = pods.items.filter((pod) => pod.metadata.labels?.app === botId);
+
+    const configMapName = `${botId}-code`;
+    let configMap = null;
+    try {
+      configMap = await this.k8sClient.getConfigMap(configMapName, this.baseNamespace);
+    } catch {}
+
+    const stage = this.determineUpdateStage(deployment, botPods);
+
+    return {
+      stage,
+      deployment: {
+        ready: deployment.status?.readyReplicas === deployment.spec.replicas,
+        replicas: {
+          ready: deployment.status?.readyReplicas || 0,
+          total: deployment.spec.replicas || 0,
+        },
+        conditions: deployment.status?.conditions || [],
+        generation: deployment.metadata.generation,
+        observedGeneration: deployment.status?.observedGeneration,
+      },
+      pods: botPods.map((pod) => ({
+        name: pod.metadata.name,
+        phase: pod.status?.phase || 'Unknown',
+        ready: pod.status?.conditions?.find((c) => c.type === 'Ready')?.status === 'True',
+        restartCount: pod.status?.containerStatuses?.[0]?.restartCount || 0,
+        age: this.calculatePodAge(pod.status?.startTime),
+        containerState: pod.status?.containerStatuses?.[0]?.state,
+      })),
+      configMap: configMap
+        ? {
+            updated: true,
+            lastModified: configMap.metadata.resourceVersion || '',
+          }
+        : null,
+    };
   }
 }

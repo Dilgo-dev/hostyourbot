@@ -45,6 +45,29 @@ export interface BotStats {
   totalUptime: number;
 }
 
+export interface BotDetailedStatus {
+  stage: 'validation' | 'upload' | 'config' | 'restart' | 'complete' | 'error';
+  deployment: {
+    ready: boolean;
+    replicas: { ready: number; total: number };
+    conditions: any[];
+    generation?: number;
+    observedGeneration?: number;
+  };
+  pods: Array<{
+    name: string;
+    phase: string;
+    ready: boolean;
+    restartCount: number;
+    age?: number;
+    containerState?: any;
+  }>;
+  configMap: {
+    updated: boolean;
+    lastModified: string;
+  } | null;
+}
+
 export const botService = {
   async getUserId(): Promise<string | undefined> {
     try {
@@ -205,5 +228,13 @@ export const botService = {
     }
 
     return logs;
+  },
+
+  async getBotStatus(id: string): Promise<BotDetailedStatus> {
+    const userId = await this.getUserId();
+    const response = await k8sApi.get<BotDetailedStatus>(`/api/v1/bots/${id}/status`, {
+      params: { userId },
+    });
+    return response.data;
   },
 };

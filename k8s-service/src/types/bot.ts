@@ -62,3 +62,31 @@ export interface BotDeploymentRequest {
 export interface BotScaleRequest {
   replicas: number;
 }
+
+export type UpdateStage = 'validation' | 'upload' | 'config' | 'restart' | 'complete' | 'error';
+
+export interface BotDetailedStatus {
+  stage: UpdateStage;
+  deployment: {
+    ready: boolean;
+    replicas: {
+      ready: number;
+      total: number;
+    };
+    conditions: any[];
+    generation?: number;
+    observedGeneration?: number;
+  };
+  pods: Array<{
+    name: string;
+    phase: string;
+    ready: boolean;
+    restartCount: number;
+    age?: number;
+    containerState?: any;
+  }>;
+  configMap: {
+    updated: boolean;
+    lastModified: string;
+  } | null;
+}

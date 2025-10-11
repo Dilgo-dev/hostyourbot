@@ -300,3 +300,16 @@ export const updateBot = async (
     reply.status(400).send({ error: 'Failed to update bot', message: error.message });
   }
 };
+
+export const getBotStatus = async (
+  request: FastifyRequest<{ Params: { id: string }; Querystring: { userId?: string } }>,
+  reply: FastifyReply
+) => {
+  try {
+    const userId = request.query.userId || request.headers['x-user-id'] as string;
+    const status = await botService.getBotDetailedStatus(request.params.id, userId);
+    reply.send(status);
+  } catch (error: any) {
+    reply.status(404).send({ error: 'Failed to get bot status', message: error.message });
+  }
+};

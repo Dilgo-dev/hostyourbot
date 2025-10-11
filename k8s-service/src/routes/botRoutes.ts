@@ -16,12 +16,14 @@ import {
   stopBotAsAdmin,
   startBotAsAdmin,
   updateBot,
+  getBotStatus,
 } from '../controllers/botController';
 
 export default async function botRoutes(fastify: FastifyInstance) {
   fastify.post('/bots', deployBot);
   fastify.get('/bots', listBots);
   fastify.get('/bots/:id', getBot);
+  fastify.get('/bots/:id/status', getBotStatus);
   fastify.put('/bots/:id', updateBot);
   fastify.delete('/bots/:id', deleteBot);
   fastify.delete('/bots/user/:userId', deleteUserBots);
