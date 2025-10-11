@@ -221,14 +221,54 @@ export default function Builder() {
     }
   };
 
+  const handleGenerateAndDownload = async () => {
+    if (!user) return;
+
+    if (nodes.length === 0) {
+      setError('Ajoutez des blocs avant de générer');
+      return;
+    }
+
+    const eventNodes = nodes.filter(n => n.data.type === 'event');
+    if (eventNodes.length === 0) {
+      setError('Ajoutez au moins un événement (bloc violet)');
+      return;
+    }
+
+    setGenerating(true);
+    setError(null);
+
+    try {
+      const zipBlob = await builderService.generateDirect({
+        nodes,
+        edges,
+      });
+
+      const url = window.URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'discord-bot.zip';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Erreur lors de la génération');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   return (
     <div className="h-screen flex flex-col bg-slate-900">
       <BuilderToolbar
         onClear={handleClear}
         onSave={isDeployMode ? handleSave : undefined}
         onGenerate={isDeployMode ? handleGenerateAndDeploy : undefined}
+        onGenerateDownload={isDeployMode ? handleGenerateAndDownload : undefined}
         saving={saving}
         generating={generating}
+        isAdmin={user?.role === 'admin'}
       />
 
       {error && (
