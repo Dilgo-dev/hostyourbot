@@ -13,6 +13,7 @@ export interface Bot {
   image?: string;
   namespace?: string;
   userId?: string;
+  workflowId?: string;
   podInfo?: {
     ready: number;
     total: number;
@@ -33,6 +34,7 @@ export interface CreateBotRequest {
   envVars: EnvVar[];
   startCommand?: string;
   userId?: string;
+  workflowId?: string;
 }
 
 export interface BotStats {
@@ -90,6 +92,10 @@ export const botService = {
 
     if (data.startCommand) {
       formData.append('startCommand', data.startCommand);
+    }
+
+    if (data.workflowId) {
+      formData.append('workflowId', data.workflowId);
     }
 
     formData.append('envVars', JSON.stringify(data.envVars));

@@ -15,13 +15,17 @@ export class BotDeploymentService {
   }
 
   private createDeploymentManifest(botId: string, config: BotConfig): Deployment {
-    const labels = {
+    const labels: Record<string, string> = {
       app: botId,
       'bot-language': config.language,
       'bot-version': config.version,
       'managed-by': 'hostyourbot',
       'user-id': config.userId || 'unknown',
     };
+
+    if (config.workflowId) {
+      labels['workflow-id'] = config.workflowId;
+    }
 
     const volumes: Volume[] = [];
     const initContainers: Container[] = [];
@@ -187,6 +191,7 @@ export class BotDeploymentService {
       image: deployment.spec.template.spec.containers[0]?.image || '',
       replicas: deployment.spec.replicas,
       userId: deployment.metadata.labels?.['user-id'],
+      workflowId: deployment.metadata.labels?.['workflow-id'],
       createdAt: deployment.metadata.creationTimestamp || new Date().toISOString(),
       podInfo: {
         ready: deployment.status?.readyReplicas || 0,

@@ -52,6 +52,7 @@ export const deployBot = async (
       env: envVars,
       image: getDockerImage(fields.language, fields.version),
       userId: fields.userId,
+      workflowId: fields.workflowId,
       startCommand: fields.startCommand,
       zipFileBase64,
     });

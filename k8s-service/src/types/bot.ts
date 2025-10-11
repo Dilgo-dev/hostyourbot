@@ -24,6 +24,7 @@ export interface BotConfig {
   version: string;
   image: string;
   userId?: string;
+  workflowId?: string;
   startCommand?: string;
   zipFileBase64?: string;
   env?: EnvVar[];
@@ -40,6 +41,7 @@ export interface Bot {
   image: string;
   replicas: number;
   userId?: string;
+  workflowId?: string;
   createdAt: string;
   updatedAt?: string;
   podInfo?: {

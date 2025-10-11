@@ -28,6 +28,7 @@ export default function CreateBot() {
   const [startCommand, setStartCommand] = useState('');
   const [envVars, setEnvVars] = useState<EnvVar[]>([]);
   const [fromBuilder, setFromBuilder] = useState(false);
+  const [workflowId, setWorkflowId] = useState<string | null>(null);
 
   const steps = ['Configuration', 'Fichiers', 'Commande', 'Variables', 'Récapitulatif'];
 
@@ -40,6 +41,9 @@ export default function CreateBot() {
       setLanguage('nodejs');
       setVersion('LTS');
       setStartCommand('node index.js');
+      if (state?.workflowId) {
+        setWorkflowId(state.workflowId);
+      }
     }
   }, [location]);
 
@@ -72,6 +76,7 @@ export default function CreateBot() {
         startCommand: startCommand.trim() || undefined,
         envVars: validEnvVars,
         userId: user?.id,
+        workflowId: workflowId || undefined,
       });
 
       navigate('/dashboard');

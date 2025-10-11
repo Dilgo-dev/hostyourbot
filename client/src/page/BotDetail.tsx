@@ -6,6 +6,7 @@ import DashboardLayout from '../component/dashboard/DashboardLayout';
 import BotInfo from '../component/botdetail/BotInfo';
 import BotLogs from '../component/botdetail/BotLogs';
 import BotActions from '../component/botdetail/BotActions';
+import BotWorkflow from '../component/botdetail/BotWorkflow';
 import { botService, type Bot } from '../services/botService';
 
 export default function BotDetail() {
@@ -128,6 +129,8 @@ export default function BotDetail() {
 
         <div className="space-y-6">
           <BotInfo bot={bot} />
+
+          <BotWorkflow bot={bot} />
 
           <BotActions
             bot={bot}

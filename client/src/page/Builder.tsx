@@ -44,6 +44,33 @@ export default function Builder() {
   const [error, setError] = useState<string | null>(null);
 
   const isDeployMode = searchParams.get('mode') === 'deploy';
+  const isEditMode = searchParams.get('mode') === 'edit';
+  const workflowIdParam = searchParams.get('workflowId');
+
+  useEffect(() => {
+    if (workflowIdParam && user && (isEditMode || isDeployMode)) {
+      loadWorkflow(workflowIdParam);
+    }
+  }, [workflowIdParam, user, isEditMode, isDeployMode]);
+
+  const loadWorkflow = async (id: string) => {
+    if (!user) return;
+
+    setSaving(true);
+    setError(null);
+
+    try {
+      const workflow = await builderService.getWorkflow(id, user.id);
+      setWorkflowName(workflow.name);
+      setCurrentWorkflowId(workflow._id || null);
+      setNodes(workflow.nodes);
+      setEdges(workflow.edges);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Erreur lors du chargement du workflow');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
@@ -202,6 +229,35 @@ export default function Builder() {
     setError(null);
 
     try {
+      let workflowId = currentWorkflowId;
+
+      if (!workflowId) {
+        if (!workflowName.trim()) {
+          const name = prompt('Nom du workflow :');
+          if (!name) {
+            setGenerating(false);
+            return;
+          }
+          setWorkflowName(name);
+        }
+
+        const workflow = await builderService.createWorkflow({
+          name: workflowName || 'Bot Discord',
+          userId: user.id,
+          nodes,
+          edges,
+          botType: 'discord',
+        });
+        workflowId = workflow._id || null;
+        setCurrentWorkflowId(workflowId);
+      } else {
+        await builderService.updateWorkflow(workflowId, user.id, {
+          name: workflowName,
+          nodes,
+          edges,
+        });
+      }
+
       const zipBlob = await builderService.generateDirect({
         nodes,
         edges,
@@ -213,6 +269,7 @@ export default function Builder() {
         state: {
           generatedZip: file,
           fromBuilder: true,
+          workflowId,
         },
       });
     } catch (err: any) {
