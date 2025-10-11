@@ -502,7 +502,22 @@ export class BotDeploymentService {
       }
     }
 
-    const currentDeployment = await this.k8sClient.getDeployment(botId, this.baseNamespace);
+    let currentDeployment;
+    try {
+      currentDeployment = await this.k8sClient.getDeployment(botId, this.baseNamespace);
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        throw new Error('Bot not found in Kubernetes cluster');
+      }
+      throw error;
+    }
+
+    if (updateData.name) {
+      const newBotId = this.generateBotId(updateData.name);
+      if (newBotId !== botId) {
+        throw new Error('Cannot change bot name. Please create a new bot instead.');
+      }
+    }
 
     if (updateData.zipFileBase64) {
       const configMapName = `${botId}-code`;
@@ -552,10 +567,6 @@ export class BotDeploymentService {
       }
     }
 
-    if (updateData.name) {
-      currentDeployment.metadata.name = this.generateBotId(updateData.name);
-    }
-
     if (updateData.language) {
       currentDeployment.metadata.labels = currentDeployment.metadata.labels || {};
       currentDeployment.metadata.labels['bot-language'] = updateData.language;
@@ -594,16 +605,17 @@ export class BotDeploymentService {
       container.args = [`cd /app && npm install && ${updateData.startCommand}`];
     }
 
+    if (updateData.zipFileBase64 || updateData.startCommand || updateData.env) {
+      currentDeployment.spec.template.metadata.annotations = currentDeployment.spec.template.metadata.annotations || {};
+      currentDeployment.spec.template.metadata.annotations['kubectl.kubernetes.io/restartedAt'] = new Date().toISOString();
+    }
+
     const updatedDeployment = await this.k8sClient.updateDeployment(
       botId,
       currentDeployment,
       this.baseNamespace
     );
 
-    await this.k8sClient.deleteDeployment(botId, this.baseNamespace);
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    const recreatedDeployment = await this.k8sClient.createDeployment(updatedDeployment, this.baseNamespace);
-
-    return await this.mapDeploymentToBot(recreatedDeployment);
+    return await this.mapDeploymentToBot(updatedDeployment);
   }
 }
