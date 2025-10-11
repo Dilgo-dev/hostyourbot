@@ -111,10 +111,47 @@ export const botService = {
 
   async updateBot(id: string, data: Partial<CreateBotRequest>): Promise<Bot> {
     const userId = await this.getUserId();
-    const response = await k8sApi.patch<{ bot: Bot }>(`/api/v1/bots/${id}`, data, {
-      params: { userId },
+    const formData = new FormData();
+
+    if (data.name) {
+      formData.append('name', data.name);
+    }
+
+    if (data.language) {
+      formData.append('language', data.language);
+    }
+
+    if (data.version) {
+      formData.append('version', data.version);
+    }
+
+    if (userId) {
+      formData.append('userId', userId);
+    }
+
+    if (data.zipFile) {
+      formData.append('zipFile', data.zipFile);
+    }
+
+    if (data.startCommand) {
+      formData.append('startCommand', data.startCommand);
+    }
+
+    if (data.workflowId) {
+      formData.append('workflowId', data.workflowId);
+    }
+
+    if (data.envVars) {
+      formData.append('envVars', JSON.stringify(data.envVars));
+    }
+
+    const response = await k8sApi.put<Bot>(`/api/v1/bots/${id}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
     });
-    return response.data.bot;
+
+    return response.data;
   },
 
   async deleteBot(id: string): Promise<void> {

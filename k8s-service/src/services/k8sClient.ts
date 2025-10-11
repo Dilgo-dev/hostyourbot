@@ -150,6 +150,11 @@ export class K8sClient {
     await this.client.delete(`/api/v1/namespaces/${namespace}/configmaps/${name}`);
   }
 
+  async updateConfigMap(name: string, configMap: ConfigMap, namespace: string = 'default'): Promise<ConfigMap> {
+    const response = await this.client.put(`/api/v1/namespaces/${namespace}/configmaps/${name}`, configMap);
+    return response.data;
+  }
+
   async healthCheck(): Promise<boolean> {
     try {
       await this.client.get('/healthz');

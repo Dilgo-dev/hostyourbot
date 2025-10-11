@@ -493,4 +493,117 @@ export class BotDeploymentService {
     );
     return await this.mapDeploymentToBot(deployment);
   }
+
+  async updateBot(botId: string, updateData: Partial<BotConfig> & { userId?: string }): Promise<Bot> {
+    if (updateData.userId) {
+      const bot = await this.getBot(botId, updateData.userId);
+      if (bot.userId !== updateData.userId) {
+        throw new Error('Unauthorized: You do not have access to this bot');
+      }
+    }
+
+    const currentDeployment = await this.k8sClient.getDeployment(botId, this.baseNamespace);
+
+    if (updateData.zipFileBase64) {
+      const configMapName = `${botId}-code`;
+
+      try {
+        await this.k8sClient.getConfigMap(configMapName, this.baseNamespace);
+
+        const updatedConfigMap: ConfigMap = {
+          apiVersion: 'v1',
+          kind: 'ConfigMap',
+          metadata: {
+            name: configMapName,
+            namespace: this.baseNamespace,
+            labels: {
+              app: botId,
+              'managed-by': 'hostyourbot',
+            },
+          },
+          binaryData: {
+            'bot.zip': updateData.zipFileBase64,
+          },
+        };
+
+        await this.k8sClient.updateConfigMap(configMapName, updatedConfigMap, this.baseNamespace);
+      } catch (error: any) {
+        if (error.response?.status === 404) {
+          const newConfigMap: ConfigMap = {
+            apiVersion: 'v1',
+            kind: 'ConfigMap',
+            metadata: {
+              name: configMapName,
+              namespace: this.baseNamespace,
+              labels: {
+                app: botId,
+                'managed-by': 'hostyourbot',
+              },
+            },
+            binaryData: {
+              'bot.zip': updateData.zipFileBase64,
+            },
+          };
+
+          await this.k8sClient.createConfigMap(newConfigMap, this.baseNamespace);
+        } else {
+          throw error;
+        }
+      }
+    }
+
+    if (updateData.name) {
+      currentDeployment.metadata.name = this.generateBotId(updateData.name);
+    }
+
+    if (updateData.language) {
+      currentDeployment.metadata.labels = currentDeployment.metadata.labels || {};
+      currentDeployment.metadata.labels['bot-language'] = updateData.language;
+      currentDeployment.spec.template.metadata.labels = currentDeployment.spec.template.metadata.labels || {};
+      currentDeployment.spec.template.metadata.labels['bot-language'] = updateData.language;
+    }
+
+    if (updateData.version) {
+      currentDeployment.metadata.labels = currentDeployment.metadata.labels || {};
+      currentDeployment.metadata.labels['bot-version'] = updateData.version;
+      currentDeployment.spec.template.metadata.labels = currentDeployment.spec.template.metadata.labels || {};
+      currentDeployment.spec.template.metadata.labels['bot-version'] = updateData.version;
+    }
+
+    if (updateData.workflowId) {
+      currentDeployment.metadata.labels = currentDeployment.metadata.labels || {};
+      currentDeployment.metadata.labels['workflow-id'] = updateData.workflowId;
+      currentDeployment.spec.template.metadata.labels = currentDeployment.spec.template.metadata.labels || {};
+      currentDeployment.spec.template.metadata.labels['workflow-id'] = updateData.workflowId;
+    }
+
+    if (updateData.image) {
+      currentDeployment.spec.template.spec.containers[0].image = updateData.image;
+    }
+
+    if (updateData.env) {
+      currentDeployment.spec.template.spec.containers[0].env = updateData.env.map((envVar) => ({
+        name: envVar.key,
+        value: envVar.value,
+      }));
+    }
+
+    if (updateData.startCommand) {
+      const container = currentDeployment.spec.template.spec.containers[0];
+      container.command = ['sh', '-c'];
+      container.args = [`cd /app && npm install && ${updateData.startCommand}`];
+    }
+
+    const updatedDeployment = await this.k8sClient.updateDeployment(
+      botId,
+      currentDeployment,
+      this.baseNamespace
+    );
+
+    await this.k8sClient.deleteDeployment(botId, this.baseNamespace);
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    const recreatedDeployment = await this.k8sClient.createDeployment(updatedDeployment, this.baseNamespace);
+
+    return await this.mapDeploymentToBot(recreatedDeployment);
+  }
 }
