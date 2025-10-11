@@ -151,7 +151,18 @@ export class K8sClient {
   }
 
   async updateConfigMap(name: string, configMap: ConfigMap, namespace: string = 'default'): Promise<ConfigMap> {
-    const response = await this.client.put(`/api/v1/namespaces/${namespace}/configmaps/${name}`, configMap);
+    const response = await this.client.patch(
+      `/api/v1/namespaces/${namespace}/configmaps/${name}`,
+      {
+        binaryData: configMap.binaryData,
+        data: configMap.data,
+      },
+      {
+        headers: {
+          'Content-Type': 'application/strategic-merge-patch+json',
+        },
+      }
+    );
     return response.data;
   }
 

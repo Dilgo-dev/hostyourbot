@@ -553,6 +553,14 @@ export class BotDeploymentService {
           },
         };
 
+        try {
+          await this.k8sClient.getDeployment(botId, this.baseNamespace);
+        } catch (deployError: any) {
+          if (deployError.response?.status === 404) {
+            throw new Error('Deployment has been deleted. Cannot update bot. Please redeploy the bot.');
+          }
+        }
+
         await this.k8sClient.updateConfigMap(configMapName, updatedConfigMap, this.baseNamespace);
       } catch (error: any) {
         if (error.response?.status === 404) {
