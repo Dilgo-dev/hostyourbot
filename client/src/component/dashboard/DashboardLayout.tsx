@@ -77,16 +77,25 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         className="sticky top-0 left-0 h-screen bg-slate-800 border-r border-slate-700 flex flex-col overflow-hidden"
       >
         <div className="p-6 border-b border-slate-700 flex items-center justify-between">
-          {sidebarOpen && (
-            <motion.div
+          {sidebarOpen ? (
+            <motion.button
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="flex items-center gap-3"
+              onClick={() => navigate('/dashboard')}
+              className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer"
             >
               <FaRocket className="text-purple-400 text-2xl" />
               <span className="text-white text-xl font-bold">HostYourBot</span>
-            </motion.div>
+            </motion.button>
+          ) : (
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="p-2 text-purple-400 hover:opacity-80 transition-opacity cursor-pointer"
+              title="Retour au Dashboard"
+            >
+              <FaRocket className="text-2xl" />
+            </button>
           )}
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
