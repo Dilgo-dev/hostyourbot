@@ -83,20 +83,36 @@ export default function WorkflowList({
     });
   };
 
+  const getDeployedBots = (workflowId: string) => {
+    return bots.filter(bot => bot.workflowId === workflowId);
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {workflows.map((workflow, index) => (
-        <motion.div
-          key={workflow._id}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: index * 0.1 }}
-          className="bg-slate-800 border border-slate-700 rounded-xl p-6 hover:border-purple-500/50 transition-all duration-200"
-        >
-          <div className="mb-4">
-            <h3 className="text-white text-lg font-semibold mb-2 truncate">
-              {workflow.name}
-            </h3>
+      {workflows.map((workflow, index) => {
+        const deployedBots = getDeployedBots(workflow._id!);
+        const isDeployed = deployedBots.length > 0;
+
+        return (
+          <motion.div
+            key={workflow._id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: index * 0.1 }}
+            className="bg-slate-800 border border-slate-700 rounded-xl p-6 hover:border-purple-500/50 transition-all duration-200"
+          >
+            <div className="mb-4">
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <h3 className="text-white text-lg font-semibold truncate flex-1">
+                  {workflow.name}
+                </h3>
+                {isDeployed && (
+                  <div className="flex items-center gap-1 bg-purple-600/20 border border-purple-500/30 px-2 py-1 rounded text-purple-400 text-xs font-medium whitespace-nowrap">
+                    <FaRocket className="text-[10px]" />
+                    <span>{deployedBots.length}</span>
+                  </div>
+                )}
+              </div>
             {workflow.description && (
               <p className="text-slate-400 text-sm line-clamp-2 mb-3">
                 {workflow.description}
@@ -139,7 +155,8 @@ export default function WorkflowList({
             </button>
           </div>
         </motion.div>
-      ))}
+        );
+      })}
     </div>
   );
 }

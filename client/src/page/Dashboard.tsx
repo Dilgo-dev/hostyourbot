@@ -187,6 +187,7 @@ export default function Dashboard() {
           <h2 className="text-white text-2xl font-bold mb-6">Mes Workflows</h2>
           <WorkflowList
             workflows={workflows}
+            bots={bots}
             loading={loading}
             onEdit={handleEditWorkflow}
             onDelete={handleDeleteWorkflow}
