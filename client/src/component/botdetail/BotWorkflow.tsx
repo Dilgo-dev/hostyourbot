@@ -15,7 +15,7 @@ export default function BotWorkflow({ bot }: BotWorkflowProps) {
   }
 
   const handleEditWorkflow = () => {
-    navigate(`/builder?workflowId=${bot.workflowId}&mode=edit`);
+    navigate(`/builder?workflowId=${bot.workflowId}&botId=${bot.id}&mode=edit`);
   };
 
   return (

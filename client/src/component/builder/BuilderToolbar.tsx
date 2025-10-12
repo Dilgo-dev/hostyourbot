@@ -9,6 +9,7 @@ interface BuilderToolbarProps {
   onSave?: () => void;
   onGenerate?: () => void;
   onGenerateDownload?: () => void;
+  onRedeploy?: () => void;
   saving?: boolean;
   generating?: boolean;
   isAdmin?: boolean;
@@ -21,6 +22,7 @@ export default function BuilderToolbar({
   onSave,
   onGenerate,
   onGenerateDownload,
+  onRedeploy,
   saving = false,
   generating = false,
   isAdmin = false,
@@ -171,6 +173,17 @@ export default function BuilderToolbar({
               </div>
             )}
           </div>
+        )}
+
+        {onRedeploy && (
+          <button
+            onClick={onRedeploy}
+            disabled={generating}
+            className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <FaRocket className="text-lg" />
+            <span>{generating ? 'Redéploiement...' : 'Redéployer'}</span>
+          </button>
         )}
       </div>
     </div>
