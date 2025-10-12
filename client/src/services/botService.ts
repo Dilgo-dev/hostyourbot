@@ -97,14 +97,22 @@ export const botService = {
   },
 
   async getBot(id: string): Promise<Bot> {
+    console.log('[botService.getBot] Récupération du bot:', id);
     const userId = await this.getUserId();
     const response = await k8sApi.get<Bot | { bot: Bot }>(`/api/v1/bots/${id}`, {
       params: { userId },
     });
-    if ('bot' in response.data) {
-      return response.data.bot;
+    console.log('[botService.getBot] Réponse complète:', response.data);
+
+    const bot = 'bot' in response.data ? response.data.bot : response.data;
+
+    if (!bot || !bot.id) {
+      console.error('[botService.getBot] Réponse invalide');
+      throw new Error('Le serveur n\'a pas retourné de bot valide');
     }
-    return response.data as Bot;
+
+    console.log('[botService.getBot] Bot récupéré:', bot);
+    return bot;
   },
 
   async createBot(data: CreateBotRequest): Promise<Bot> {
@@ -140,17 +148,32 @@ export const botService = {
     formData.append('envVars', JSON.stringify(data.envVars));
 
     console.log('[botService.createBot] Envoi de la requête POST');
-    const response = await k8sApi.post<{ bot: Bot }>('/api/v1/bots', formData, {
+    const response = await k8sApi.post<Bot | { bot: Bot }>('/api/v1/bots', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
 
-    console.log('[botService.createBot] Bot créé avec succès:', response.data.bot);
-    return response.data.bot;
+    console.log('[botService.createBot] Réponse complète:', response.data);
+
+    const bot = 'bot' in response.data ? response.data.bot : response.data;
+
+    if (!bot) {
+      console.error('[botService.createBot] Le serveur n\'a pas retourné de bot valide');
+      throw new Error('Le serveur n\'a pas retourné de bot valide');
+    }
+
+    if (!bot.id) {
+      console.error('[botService.createBot] Le bot retourné n\'a pas d\'ID:', bot);
+      throw new Error('Le bot retourné n\'a pas d\'ID valide');
+    }
+
+    console.log('[botService.createBot] Bot créé avec succès:', bot);
+    return bot;
   },
 
   async updateBot(id: string, data: Partial<CreateBotRequest>): Promise<Bot> {
+    console.log('[botService.updateBot] Début mise à jour bot:', id, 'avec data:', data);
     const userId = await this.getUserId();
     const formData = new FormData();
 
@@ -186,13 +209,23 @@ export const botService = {
       formData.append('envVars', JSON.stringify(data.envVars));
     }
 
-    const response = await k8sApi.put<Bot>(`/api/v1/bots/${id}`, formData, {
+    const response = await k8sApi.put<Bot | { bot: Bot }>(`/api/v1/bots/${id}`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
 
-    return response.data;
+    console.log('[botService.updateBot] Réponse complète:', response.data);
+
+    const bot = 'bot' in response.data ? response.data.bot : response.data;
+
+    if (!bot || !bot.id) {
+      console.error('[botService.updateBot] Réponse invalide');
+      throw new Error('Le serveur n\'a pas retourné de bot valide');
+    }
+
+    console.log('[botService.updateBot] Bot mis à jour avec succès:', bot);
+    return bot;
   },
 
   async deleteBot(id: string): Promise<void> {
