@@ -42,21 +42,8 @@ export const authService = {
   },
 
   async getCurrentUser(): Promise<{ user: User }> {
-    console.log('[authService.getCurrentUser] Récupération de l\'utilisateur actuel');
-    try {
-      const response = await authApi.get<{ user: User }>('/api/auth/me');
-      console.log('[authService.getCurrentUser] Réponse reçue:', response.data);
-      if (!response.data) {
-        console.error('[authService.getCurrentUser] response.data est undefined');
-      }
-      if (!response.data.user) {
-        console.error('[authService.getCurrentUser] response.data.user est undefined');
-      }
-      return response.data;
-    } catch (error) {
-      console.error('[authService.getCurrentUser] Erreur lors de la récupération:', error);
-      throw error;
-    }
+    const response = await authApi.get<{ user: User }>('/api/auth/me');
+    return response.data;
   },
 
   async logout(): Promise<void> {

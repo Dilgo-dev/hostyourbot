@@ -27,8 +27,6 @@ export default function BuilderDeployModal({
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  console.log('[BuilderDeployModal] Rendu du composant - user:', user);
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deployStage, setDeployStage] = useState<UpdateStage | null>(null);
@@ -38,27 +36,21 @@ export default function BuilderDeployModal({
   const [name, setName] = useState('');
   const [envVars, setEnvVars] = useState<EnvVar[]>([]);
 
-  console.log('[BuilderDeployModal] État actuel - pollingEnabled:', pollingEnabled, 'createdBotId:', createdBotId);
-
   useBotStatusPolling({
     botId: createdBotId || '',
     enabled: pollingEnabled && !!createdBotId,
     onStageChange: (newStage) => {
-      console.log('[BuilderDeployModal] Changement de stage:', newStage);
       setDeployStage(newStage);
     },
     onComplete: () => {
-      console.log('[BuilderDeployModal] Déploiement terminé avec succès');
       setPollingEnabled(false);
       setLoading(false);
       setTimeout(() => {
-        console.log('[BuilderDeployModal] Navigation vers dashboard');
         navigate('/dashboard');
         onClose();
       }, 1500);
     },
     onError: (err) => {
-      console.error('[BuilderDeployModal] Erreur de polling:', err);
       setError(err);
       setPollingEnabled(false);
       setLoading(false);
@@ -78,17 +70,12 @@ export default function BuilderDeployModal({
   }, [isOpen, workflowName]);
 
   const handleDeploy = async () => {
-    console.log('[BuilderDeployModal.handleDeploy] Début du déploiement');
-    console.log('[BuilderDeployModal.handleDeploy] User:', user);
-
     if (!user) {
-      console.error('[BuilderDeployModal.handleDeploy] Utilisateur non authentifié');
       setError('Utilisateur non authentifié');
       return;
     }
 
     if (!name.trim()) {
-      console.error('[BuilderDeployModal.handleDeploy] Nom du bot vide');
       setError('Veuillez entrer un nom pour votre bot');
       return;
     }
@@ -97,11 +84,9 @@ export default function BuilderDeployModal({
     setLoading(true);
 
     try {
-      console.log('[BuilderDeployModal.handleDeploy] Validation...');
       setDeployStage('validation');
 
       const validEnvVars = envVars.filter((v) => v.key && v.value);
-      console.log('[BuilderDeployModal.handleDeploy] Variables d\'environnement valides:', validEnvVars);
 
       const deployData: CreateBotRequest = {
         name: name.trim(),
@@ -114,22 +99,14 @@ export default function BuilderDeployModal({
         workflowId: workflowId || undefined,
       };
 
-      console.log('[BuilderDeployModal.handleDeploy] Données de déploiement préparées:', deployData);
-      console.log('[BuilderDeployModal.handleDeploy] Upload...');
       setDeployStage('upload');
 
-      console.log('[BuilderDeployModal.handleDeploy] Appel à botService.createBot');
       const createdBot = await botService.createBot(deployData);
-      console.log('[BuilderDeployModal.handleDeploy] Bot créé:', createdBot);
       setCreatedBotId(createdBot.id);
-      console.log('[BuilderDeployModal.handleDeploy] createdBotId défini:', createdBot.id);
 
-      console.log('[BuilderDeployModal.handleDeploy] Configuration...');
       setDeployStage('config');
-      console.log('[BuilderDeployModal.handleDeploy] Activation du polling');
       setPollingEnabled(true);
     } catch (err: any) {
-      console.error('[BuilderDeployModal.handleDeploy] Erreur:', err);
       setError(err.message || 'Erreur lors du déploiement du bot');
       setLoading(false);
       setDeployStage(null);

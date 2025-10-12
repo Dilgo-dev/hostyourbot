@@ -71,19 +71,13 @@ export interface BotDetailedStatus {
 export const botService = {
   async getUserId(): Promise<string | undefined> {
     try {
-      console.log('[botService.getUserId] Début de la récupération de l\'userId');
       const response = await authService.getCurrentUser();
-      console.log('[botService.getUserId] Réponse reçue:', response);
       const { user } = response;
-      console.log('[botService.getUserId] User extrait:', user);
       if (!user) {
-        console.error('[botService.getUserId] User est undefined ou null');
         return undefined;
       }
-      console.log('[botService.getUserId] UserId:', user.id);
       return user.id;
     } catch (error) {
-      console.error('[botService.getUserId] Erreur lors de la récupération:', error);
       return undefined;
     }
   },
@@ -97,28 +91,22 @@ export const botService = {
   },
 
   async getBot(id: string): Promise<Bot> {
-    console.log('[botService.getBot] Récupération du bot:', id);
     const userId = await this.getUserId();
     const response = await k8sApi.get<Bot | { bot: Bot }>(`/api/v1/bots/${id}`, {
       params: { userId },
     });
-    console.log('[botService.getBot] Réponse complète:', response.data);
 
     const bot = 'bot' in response.data ? response.data.bot : response.data;
 
     if (!bot || !bot.id) {
-      console.error('[botService.getBot] Réponse invalide');
       throw new Error('Le serveur n\'a pas retourné de bot valide');
     }
 
-    console.log('[botService.getBot] Bot récupéré:', bot);
     return bot;
   },
 
   async createBot(data: CreateBotRequest): Promise<Bot> {
-    console.log('[botService.createBot] Début création bot avec data:', data);
     const userId = await this.getUserId();
-    console.log('[botService.createBot] UserId récupéré:', userId);
     const formData = new FormData();
 
     formData.append('name', data.name);
@@ -127,14 +115,10 @@ export const botService = {
 
     if (userId) {
       formData.append('userId', userId);
-      console.log('[botService.createBot] UserId ajouté au formData');
-    } else {
-      console.warn('[botService.createBot] Aucun userId disponible');
     }
 
     if (data.zipFile) {
       formData.append('zipFile', data.zipFile);
-      console.log('[botService.createBot] ZipFile ajouté');
     }
 
     if (data.startCommand) {
@@ -147,33 +131,26 @@ export const botService = {
 
     formData.append('envVars', JSON.stringify(data.envVars));
 
-    console.log('[botService.createBot] Envoi de la requête POST');
     const response = await k8sApi.post<Bot | { bot: Bot }>('/api/v1/bots', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
 
-    console.log('[botService.createBot] Réponse complète:', response.data);
-
     const bot = 'bot' in response.data ? response.data.bot : response.data;
 
     if (!bot) {
-      console.error('[botService.createBot] Le serveur n\'a pas retourné de bot valide');
       throw new Error('Le serveur n\'a pas retourné de bot valide');
     }
 
     if (!bot.id) {
-      console.error('[botService.createBot] Le bot retourné n\'a pas d\'ID:', bot);
       throw new Error('Le bot retourné n\'a pas d\'ID valide');
     }
 
-    console.log('[botService.createBot] Bot créé avec succès:', bot);
     return bot;
   },
 
   async updateBot(id: string, data: Partial<CreateBotRequest>): Promise<Bot> {
-    console.log('[botService.updateBot] Début mise à jour bot:', id, 'avec data:', data);
     const userId = await this.getUserId();
     const formData = new FormData();
 
@@ -215,16 +192,12 @@ export const botService = {
       },
     });
 
-    console.log('[botService.updateBot] Réponse complète:', response.data);
-
     const bot = 'bot' in response.data ? response.data.bot : response.data;
 
     if (!bot || !bot.id) {
-      console.error('[botService.updateBot] Réponse invalide');
       throw new Error('Le serveur n\'a pas retourné de bot valide');
     }
 
-    console.log('[botService.updateBot] Bot mis à jour avec succès:', bot);
     return bot;
   },
 
@@ -282,13 +255,10 @@ export const botService = {
   },
 
   async getBotStatus(id: string): Promise<BotDetailedStatus> {
-    console.log('[botService.getBotStatus] Récupération statut pour bot:', id);
     const userId = await this.getUserId();
-    console.log('[botService.getBotStatus] UserId pour la requête:', userId);
     const response = await k8sApi.get<BotDetailedStatus>(`/api/v1/bots/${id}/status`, {
       params: { userId },
     });
-    console.log('[botService.getBotStatus] Statut reçu:', response.data);
     return response.data;
   },
 };
