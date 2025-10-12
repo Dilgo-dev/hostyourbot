@@ -9,6 +9,7 @@ import BotActions from '../component/botdetail/BotActions';
 import BotWorkflow from '../component/botdetail/BotWorkflow';
 import BotUpdateModal from '../component/botdetail/BotUpdateModal';
 import { botService, type Bot, type CreateBotRequest } from '../services/botService';
+import { authService } from '../services/authService';
 
 export default function BotDetail() {
   const { id } = useParams<{ id: string }>();
@@ -18,13 +19,24 @@ export default function BotDetail() {
   const [logs, setLogs] = useState<string[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
   const [updateModalOpen, setUpdateModalOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     if (id) {
       loadBotData();
       loadLogs();
+      checkAdminStatus();
     }
   }, [id]);
+
+  const checkAdminStatus = async () => {
+    try {
+      const { user } = await authService.getCurrentUser();
+      setIsAdmin(user.role === 'admin');
+    } catch (error) {
+      console.error('Erreur lors de la vérification du rôle:', error);
+    }
+  };
 
   const loadBotData = async () => {
     try {
@@ -113,6 +125,17 @@ export default function BotDetail() {
     await loadBotData();
   };
 
+  const handleExecCommand = async (command: string): Promise<{ output: string; error?: string }> => {
+    try {
+      return await botService.execCommand(id!, command);
+    } catch (error: any) {
+      return {
+        output: '',
+        error: error.response?.data?.message || error.message || 'Erreur lors de l\'exécution de la commande',
+      };
+    }
+  };
+
   if (loading || !bot) {
     return (
       <DashboardLayout>
@@ -161,6 +184,8 @@ export default function BotDetail() {
             logs={logs}
             loading={logsLoading}
             onRefresh={handleRefreshLogs}
+            isAdmin={isAdmin}
+            onExecCommand={handleExecCommand}
           />
         </div>
 

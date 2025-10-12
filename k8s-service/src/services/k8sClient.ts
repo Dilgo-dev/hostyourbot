@@ -202,4 +202,50 @@ export class K8sClient {
     const response = await this.client.get('/api/v1/pods');
     return response.data;
   }
+
+  async execCommand(
+    podName: string,
+    namespace: string,
+    command: string[],
+    containerName?: string
+  ): Promise<{ output: string; error?: string }> {
+    try {
+      const params: any = {
+        command: command,
+        stdout: true,
+        stderr: true,
+      };
+
+      if (containerName) {
+        params.container = containerName;
+      }
+
+      const queryString = new URLSearchParams();
+      command.forEach(cmd => queryString.append('command', cmd));
+      queryString.append('stdout', 'true');
+      queryString.append('stderr', 'true');
+      if (containerName) {
+        queryString.append('container', containerName);
+      }
+
+      const response = await this.client.post(
+        `/api/v1/namespaces/${namespace}/pods/${podName}/exec?${queryString.toString()}`,
+        null,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      return {
+        output: response.data || '',
+      };
+    } catch (error: any) {
+      return {
+        output: '',
+        error: error.response?.data?.message || error.message || 'Command execution failed',
+      };
+    }
+  }
 }

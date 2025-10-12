@@ -313,3 +313,33 @@ export const getBotStatus = async (
     reply.status(404).send({ error: 'Failed to get bot status', message: error.message });
   }
 };
+
+export const execBotCommand = async (
+  request: FastifyRequest<{ Params: { id: string }; Body: { command: string } }>,
+  reply: FastifyReply
+) => {
+  try {
+    const { command } = request.body;
+
+    if (!command || typeof command !== 'string') {
+      return reply.status(400).send({
+        error: 'Invalid command',
+        message: 'Command is required and must be a string'
+      });
+    }
+
+    const result = await botService.execCommandInBot(request.params.id, command);
+
+    if (result.error) {
+      return reply.status(500).send({
+        error: 'Command execution failed',
+        message: result.error,
+        output: result.output
+      });
+    }
+
+    reply.send(result);
+  } catch (error: any) {
+    reply.status(500).send({ error: 'Failed to execute command', message: error.message });
+  }
+};

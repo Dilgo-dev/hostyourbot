@@ -261,4 +261,12 @@ export const botService = {
     });
     return response.data;
   },
+
+  async execCommand(id: string, command: string): Promise<{ output: string; error?: string }> {
+    const response = await k8sApi.post<{ output: string; error?: string }>(
+      `/api/v1/admin/bots/${id}/exec`,
+      { command }
+    );
+    return response.data;
+  },
 };
