@@ -5,12 +5,15 @@ import { FaPlus, FaRedo } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import DashboardLayout from '../component/dashboard/DashboardLayout';
 import BotList from '../component/dashboard/BotList';
+import WorkflowList from '../component/dashboard/WorkflowList';
 import { botService, type Bot } from '../services/botService';
+import { builderService, type Workflow } from '../services/builderService';
 
 export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [bots, setBots] = useState<Bot[]>([]);
+  const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -29,8 +32,12 @@ export default function Dashboard() {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      const botsData = await botService.getBots();
+      const [botsData, workflowsData] = await Promise.all([
+        botService.getBots(),
+        builderService.getWorkflows(user!.id)
+      ]);
       setBots(botsData);
+      setWorkflows(workflowsData);
     } catch (error) {
       console.error('Erreur lors du chargement des données:', error);
     } finally {
@@ -83,6 +90,38 @@ export default function Dashboard() {
     }
   };
 
+  const handleEditWorkflow = (id: string) => {
+    navigate(`/dashboard/builder/${id}`);
+  };
+
+  const handleDeleteWorkflow = async (id: string) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce workflow ?')) {
+      return;
+    }
+    try {
+      await builderService.deleteWorkflow(id, user!.id);
+      await loadDashboardData();
+    } catch (error) {
+      console.error('Erreur lors de la suppression du workflow:', error);
+    }
+  };
+
+  const handleDownloadWorkflow = async (id: string) => {
+    try {
+      const blob = await builderService.generateFromWorkflow(id, user!.id);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `bot-${id}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Erreur lors du téléchargement du workflow:', error);
+    }
+  };
+
   if (authLoading || !user) {
     return null;
   }
@@ -113,14 +152,28 @@ export default function Dashboard() {
           </button>
         </div>
 
-        <BotList
-          bots={bots}
-          loading={loading}
-          onStart={handleStartBot}
-          onStop={handleStopBot}
-          onRestart={handleRestartBot}
-          onDelete={handleDeleteBot}
-        />
+        <div className="mb-12">
+          <h2 className="text-white text-2xl font-bold mb-6">Mes Bots</h2>
+          <BotList
+            bots={bots}
+            loading={loading}
+            onStart={handleStartBot}
+            onStop={handleStopBot}
+            onRestart={handleRestartBot}
+            onDelete={handleDeleteBot}
+          />
+        </div>
+
+        <div>
+          <h2 className="text-white text-2xl font-bold mb-6">Mes Workflows</h2>
+          <WorkflowList
+            workflows={workflows}
+            loading={loading}
+            onEdit={handleEditWorkflow}
+            onDelete={handleDeleteWorkflow}
+            onDownload={handleDownloadWorkflow}
+          />
+        </div>
       </motion.div>
     </DashboardLayout>
   );
