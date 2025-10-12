@@ -96,10 +96,28 @@ export default function Dashboard() {
   };
 
   const handleDeleteWorkflow = async (id: string) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer ce workflow ?')) {
+    const associatedBots = bots.filter(bot => bot.workflowId === id);
+
+    let confirmMessage = 'Êtes-vous sûr de vouloir supprimer ce workflow ?';
+
+    if (associatedBots.length > 0) {
+      const botNames = associatedBots.map(bot => bot.name).join(', ');
+      confirmMessage = `⚠️ ATTENTION : Ce workflow est actuellement déployé sur ${associatedBots.length} bot(s) : ${botNames}.\n\n` +
+        `La suppression de ce workflow entraînera également la suppression de tous les bots associés.\n\n` +
+        `Voulez-vous vraiment continuer ?`;
+    }
+
+    if (!confirm(confirmMessage)) {
       return;
     }
+
     try {
+      if (associatedBots.length > 0) {
+        await Promise.all(
+          associatedBots.map(bot => botService.deleteBot(bot.id))
+        );
+      }
+
       await builderService.deleteWorkflow(id, user!.id);
       await loadDashboardData();
     } catch (error) {
