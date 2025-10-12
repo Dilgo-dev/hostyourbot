@@ -7,7 +7,8 @@ import DashboardLayout from '../component/dashboard/DashboardLayout';
 import BotList from '../component/dashboard/BotList';
 import WorkflowList from '../component/dashboard/WorkflowList';
 import { botService, type Bot } from '../services/botService';
-import { builderService, type Workflow } from '../services/builderService';
+import { builderService } from '../services/builderService';
+import type { Workflow } from '../services/builderService';
 
 export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();

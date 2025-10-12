@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { FaEdit, FaTrash, FaDownload, FaClock } from 'react-icons/fa';
-import { Workflow } from '../../services/builderService';
+import type { Workflow } from '../../services/builderService';
 
 interface WorkflowListProps {
   workflows: Workflow[];
