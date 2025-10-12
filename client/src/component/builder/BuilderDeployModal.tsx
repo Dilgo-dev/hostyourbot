@@ -4,6 +4,7 @@ import { FaTimes } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import type { EnvVar, CreateBotRequest } from '../../services/botService';
 import { botService } from '../../services/botService';
+import { useAuth } from '../../context/AuthContext';
 import EnvVarEditor from '../createbot/EnvVarEditor';
 import UpdateProgressScreen, { type UpdateStage } from '../botdetail/UpdateProgressScreen';
 import { useBotStatusPolling } from '../../hooks/useBotStatusPolling';
@@ -24,6 +25,7 @@ export default function BuilderDeployModal({
   workflowId,
 }: BuilderDeployModalProps) {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deployStage, setDeployStage] = useState<UpdateStage | null>(null);
@@ -67,6 +69,11 @@ export default function BuilderDeployModal({
   }, [isOpen, workflowName]);
 
   const handleDeploy = async () => {
+    if (!user) {
+      setError('Utilisateur non authentifié');
+      return;
+    }
+
     if (!name.trim()) {
       setError('Veuillez entrer un nom pour votre bot');
       return;
@@ -87,6 +94,7 @@ export default function BuilderDeployModal({
         zipFile,
         startCommand: 'node index.js',
         envVars: validEnvVars,
+        userId: user.id,
         workflowId: workflowId || undefined,
       };
 
