@@ -71,9 +71,19 @@ export interface BotDetailedStatus {
 export const botService = {
   async getUserId(): Promise<string | undefined> {
     try {
-      const { user } = await authService.getCurrentUser();
+      console.log('[botService.getUserId] Début de la récupération de l\'userId');
+      const response = await authService.getCurrentUser();
+      console.log('[botService.getUserId] Réponse reçue:', response);
+      const { user } = response;
+      console.log('[botService.getUserId] User extrait:', user);
+      if (!user) {
+        console.error('[botService.getUserId] User est undefined ou null');
+        return undefined;
+      }
+      console.log('[botService.getUserId] UserId:', user.id);
       return user.id;
-    } catch {
+    } catch (error) {
+      console.error('[botService.getUserId] Erreur lors de la récupération:', error);
       return undefined;
     }
   },
@@ -98,7 +108,9 @@ export const botService = {
   },
 
   async createBot(data: CreateBotRequest): Promise<Bot> {
+    console.log('[botService.createBot] Début création bot avec data:', data);
     const userId = await this.getUserId();
+    console.log('[botService.createBot] UserId récupéré:', userId);
     const formData = new FormData();
 
     formData.append('name', data.name);
@@ -107,10 +119,14 @@ export const botService = {
 
     if (userId) {
       formData.append('userId', userId);
+      console.log('[botService.createBot] UserId ajouté au formData');
+    } else {
+      console.warn('[botService.createBot] Aucun userId disponible');
     }
 
     if (data.zipFile) {
       formData.append('zipFile', data.zipFile);
+      console.log('[botService.createBot] ZipFile ajouté');
     }
 
     if (data.startCommand) {
@@ -123,12 +139,14 @@ export const botService = {
 
     formData.append('envVars', JSON.stringify(data.envVars));
 
+    console.log('[botService.createBot] Envoi de la requête POST');
     const response = await k8sApi.post<{ bot: Bot }>('/api/v1/bots', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
 
+    console.log('[botService.createBot] Bot créé avec succès:', response.data.bot);
     return response.data.bot;
   },
 
@@ -231,10 +249,13 @@ export const botService = {
   },
 
   async getBotStatus(id: string): Promise<BotDetailedStatus> {
+    console.log('[botService.getBotStatus] Récupération statut pour bot:', id);
     const userId = await this.getUserId();
+    console.log('[botService.getBotStatus] UserId pour la requête:', userId);
     const response = await k8sApi.get<BotDetailedStatus>(`/api/v1/bots/${id}/status`, {
       params: { userId },
     });
+    console.log('[botService.getBotStatus] Statut reçu:', response.data);
     return response.data;
   },
 };
