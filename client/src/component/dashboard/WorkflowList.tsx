@@ -1,9 +1,11 @@
 import { motion } from 'framer-motion';
-import { FaEdit, FaTrash, FaDownload, FaClock } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaDownload, FaClock, FaRocket } from 'react-icons/fa';
 import type { Workflow } from '../../services/builderService';
+import type { Bot } from '../../services/botService';
 
 interface WorkflowListProps {
   workflows: Workflow[];
+  bots: Bot[];
   loading?: boolean;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
