@@ -14,6 +14,7 @@ interface WorkflowListProps {
 
 export default function WorkflowList({
   workflows,
+  bots,
   loading = false,
   onEdit,
   onDelete,
