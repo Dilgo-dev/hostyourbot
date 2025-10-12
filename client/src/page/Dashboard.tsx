@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import DashboardLayout from '../component/dashboard/DashboardLayout';
 import BotList from '../component/dashboard/BotList';
 import WorkflowList from '../component/dashboard/WorkflowList';
+import DeleteWorkflowModal from '../component/dashboard/DeleteWorkflowModal';
 import { botService, type Bot } from '../services/botService';
 import { builderService } from '../services/builderService';
 import type { Workflow } from '../services/builderService';
@@ -17,6 +18,8 @@ export default function Dashboard() {
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [workflowToDelete, setWorkflowToDelete] = useState<Workflow | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -95,34 +98,27 @@ export default function Dashboard() {
     navigate(`/dashboard/builder/${id}`);
   };
 
-  const handleDeleteWorkflow = async (id: string) => {
-    const associatedBots = bots.filter(bot => bot.workflowId === id);
+  const handleDeleteWorkflow = (id: string) => {
+    const workflow = workflows.find(w => w._id === id);
+    if (workflow) {
+      setWorkflowToDelete(workflow);
+      setDeleteModalOpen(true);
+    }
+  };
 
-    let confirmMessage = 'Êtes-vous sûr de vouloir supprimer ce workflow ?';
+  const handleConfirmDeleteWorkflow = async () => {
+    if (!workflowToDelete) return;
+
+    const associatedBots = bots.filter(bot => bot.workflowId === workflowToDelete._id);
 
     if (associatedBots.length > 0) {
-      const botNames = associatedBots.map(bot => bot.name).join(', ');
-      confirmMessage = `⚠️ ATTENTION : Ce workflow est actuellement déployé sur ${associatedBots.length} bot(s) : ${botNames}.\n\n` +
-        `La suppression de ce workflow entraînera également la suppression de tous les bots associés.\n\n` +
-        `Voulez-vous vraiment continuer ?`;
+      await Promise.all(
+        associatedBots.map(bot => botService.deleteBot(bot.id))
+      );
     }
 
-    if (!confirm(confirmMessage)) {
-      return;
-    }
-
-    try {
-      if (associatedBots.length > 0) {
-        await Promise.all(
-          associatedBots.map(bot => botService.deleteBot(bot.id))
-        );
-      }
-
-      await builderService.deleteWorkflow(id, user!.id);
-      await loadDashboardData();
-    } catch (error) {
-      console.error('Erreur lors de la suppression du workflow:', error);
-    }
+    await builderService.deleteWorkflow(workflowToDelete._id!, user!.id);
+    await loadDashboardData();
   };
 
   const handleDownloadWorkflow = async (id: string) => {
@@ -195,6 +191,17 @@ export default function Dashboard() {
           />
         </div>
       </motion.div>
+
+      <DeleteWorkflowModal
+        isOpen={deleteModalOpen}
+        workflow={workflowToDelete}
+        associatedBots={workflowToDelete ? bots.filter(bot => bot.workflowId === workflowToDelete._id) : []}
+        onClose={() => {
+          setDeleteModalOpen(false);
+          setWorkflowToDelete(null);
+        }}
+        onConfirm={handleConfirmDeleteWorkflow}
+      />
     </DashboardLayout>
   );
 }
