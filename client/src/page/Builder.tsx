@@ -19,6 +19,7 @@ import BlocksPalette from '../component/builder/BlocksPalette';
 import BlockDetailsPanel from '../component/builder/BlockDetailsPanel';
 import CustomNode, { type NodeData, type NodeConfig } from '../component/builder/CustomNode';
 import { builderService } from '../services/builderService';
+import { botService } from '../services/botService';
 import { useAuth } from '../context/AuthContext';
 
 const nodeTypes = {
@@ -46,6 +47,7 @@ export default function Builder() {
   const isDeployMode = searchParams.get('mode') === 'deploy';
   const isEditMode = searchParams.get('mode') === 'edit';
   const workflowIdParam = searchParams.get('workflowId');
+  const botIdParam = searchParams.get('botId');
 
   useEffect(() => {
     if (workflowIdParam && user && (isEditMode || isDeployMode)) {
@@ -316,6 +318,52 @@ export default function Builder() {
     }
   };
 
+  const handleRedeployBot = async () => {
+    if (!user || !botIdParam) return;
+
+    if (nodes.length === 0) {
+      setError('Ajoutez des blocs avant de redéployer');
+      return;
+    }
+
+    const eventNodes = nodes.filter(n => n.data.type === 'event');
+    if (eventNodes.length === 0) {
+      setError('Ajoutez au moins un événement (bloc violet)');
+      return;
+    }
+
+    setGenerating(true);
+    setError(null);
+
+    try {
+      if (currentWorkflowId) {
+        await builderService.updateWorkflow(currentWorkflowId, user.id, {
+          name: workflowName,
+          nodes,
+          edges,
+        });
+      }
+
+      const zipBlob = await builderService.generateDirect({
+        nodes,
+        edges,
+      });
+
+      const file = new File([zipBlob], 'discord-bot.zip', { type: 'application/zip' });
+
+      await botService.updateBot(botIdParam, {
+        zipFile: file,
+        workflowId: currentWorkflowId,
+      });
+
+      navigate(`/dashboard/bot/${botIdParam}`);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Erreur lors du redéploiement');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   return (
     <div className="h-screen flex flex-col bg-slate-900">
       <BuilderToolbar
@@ -323,6 +371,7 @@ export default function Builder() {
         onSave={isDeployMode ? handleSave : undefined}
         onGenerate={isDeployMode ? handleGenerateAndDeploy : undefined}
         onGenerateDownload={isDeployMode ? handleGenerateAndDownload : undefined}
+        onRedeploy={isEditMode && botIdParam ? handleRedeployBot : undefined}
         saving={saving}
         generating={generating}
         isAdmin={user?.role === 'admin'}
