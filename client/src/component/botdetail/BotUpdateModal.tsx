@@ -41,7 +41,6 @@ export default function BotUpdateModal({ isOpen, onClose, bot, onUpdate }: BotUp
     onComplete: () => {
       setPollingEnabled(false);
       setLoading(false);
-      setTimeout(() => onClose(), 1000);
     },
     onError: (err) => {
       setError(err);
@@ -187,6 +186,12 @@ export default function BotUpdateModal({ isOpen, onClose, bot, onUpdate }: BotUp
     }
   };
 
+  const handleContinue = () => {
+    onClose();
+  };
+
+  const isUpdating = updateStage !== null && updateStage !== 'complete';
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -195,7 +200,7 @@ export default function BotUpdateModal({ isOpen, onClose, bot, onUpdate }: BotUp
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-          onClick={onClose}
+          onClick={isUpdating ? undefined : onClose}
         >
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
@@ -214,7 +219,8 @@ export default function BotUpdateModal({ isOpen, onClose, bot, onUpdate }: BotUp
               </div>
               <button
                 onClick={onClose}
-                className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
+                disabled={isUpdating}
+                className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
               >
                 <FaTimes className="text-xl" />
               </button>
@@ -251,6 +257,7 @@ export default function BotUpdateModal({ isOpen, onClose, bot, onUpdate }: BotUp
                 currentStage={updateStage}
                 hasZipFile={!!zipFile}
                 error={error}
+                onContinue={handleContinue}
               />
             ) : (
               <form onSubmit={handleSubmit} className="p-6 space-y-6">
