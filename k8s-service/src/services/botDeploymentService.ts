@@ -1,6 +1,6 @@
 import { K8sClient } from './k8sClient';
 import { Deployment, Container, Service, ConfigMap, Volume, VolumeMount } from '../types/k8s';
-import { Bot, BotConfig, BotStatus, BotType } from '../types/bot';
+import { Bot, BotConfig, BotStatus, BotType, BotDetailedStatus, UpdateStage } from '../types/bot';
 
 export class BotDeploymentService {
   private k8sClient: K8sClient;
@@ -492,5 +492,250 @@ export class BotDeploymentService {
       this.baseNamespace
     );
     return await this.mapDeploymentToBot(deployment);
+  }
+
+  async updateBot(botId: string, updateData: Partial<BotConfig> & { userId?: string }): Promise<Bot> {
+    if (updateData.userId) {
+      const bot = await this.getBot(botId, updateData.userId);
+      if (bot.userId !== updateData.userId) {
+        throw new Error('Unauthorized: You do not have access to this bot');
+      }
+    }
+
+    let currentDeployment;
+    try {
+      currentDeployment = await this.k8sClient.getDeployment(botId, this.baseNamespace);
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        throw new Error('Bot not found in Kubernetes cluster');
+      }
+      throw error;
+    }
+
+    if (updateData.name) {
+      const newBotId = this.generateBotId(updateData.name);
+      if (newBotId !== botId) {
+        throw new Error('Cannot change bot name. Please create a new bot instead.');
+      }
+    }
+
+    const hasChanges = updateData.zipFileBase64 ||
+                       updateData.language ||
+                       updateData.version ||
+                       updateData.workflowId ||
+                       updateData.image ||
+                       updateData.env ||
+                       updateData.startCommand;
+
+    if (!hasChanges) {
+      return await this.getBot(botId, updateData.userId);
+    }
+
+    if (updateData.zipFileBase64) {
+      const configMapName = `${botId}-code`;
+
+      try {
+        await this.k8sClient.getConfigMap(configMapName, this.baseNamespace);
+
+        const updatedConfigMap: ConfigMap = {
+          apiVersion: 'v1',
+          kind: 'ConfigMap',
+          metadata: {
+            name: configMapName,
+            namespace: this.baseNamespace,
+            labels: {
+              app: botId,
+              'managed-by': 'hostyourbot',
+            },
+          },
+          binaryData: {
+            'bot.zip': updateData.zipFileBase64,
+          },
+        };
+
+        try {
+          await this.k8sClient.getDeployment(botId, this.baseNamespace);
+        } catch (deployError: any) {
+          if (deployError.response?.status === 404) {
+            throw new Error('Deployment has been deleted. Cannot update bot. Please redeploy the bot.');
+          }
+        }
+
+        await this.k8sClient.updateConfigMap(configMapName, updatedConfigMap, this.baseNamespace);
+      } catch (error: any) {
+        if (error.response?.status === 404) {
+          const newConfigMap: ConfigMap = {
+            apiVersion: 'v1',
+            kind: 'ConfigMap',
+            metadata: {
+              name: configMapName,
+              namespace: this.baseNamespace,
+              labels: {
+                app: botId,
+                'managed-by': 'hostyourbot',
+              },
+            },
+            binaryData: {
+              'bot.zip': updateData.zipFileBase64,
+            },
+          };
+
+          await this.k8sClient.createConfigMap(newConfigMap, this.baseNamespace);
+        } else {
+          throw error;
+        }
+      }
+    }
+
+    if (updateData.language) {
+      currentDeployment.metadata.labels = currentDeployment.metadata.labels || {};
+      currentDeployment.metadata.labels['bot-language'] = updateData.language;
+      currentDeployment.spec.template.metadata.labels = currentDeployment.spec.template.metadata.labels || {};
+      currentDeployment.spec.template.metadata.labels['bot-language'] = updateData.language;
+    }
+
+    if (updateData.version) {
+      currentDeployment.metadata.labels = currentDeployment.metadata.labels || {};
+      currentDeployment.metadata.labels['bot-version'] = updateData.version;
+      currentDeployment.spec.template.metadata.labels = currentDeployment.spec.template.metadata.labels || {};
+      currentDeployment.spec.template.metadata.labels['bot-version'] = updateData.version;
+    }
+
+    if (updateData.workflowId) {
+      currentDeployment.metadata.labels = currentDeployment.metadata.labels || {};
+      currentDeployment.metadata.labels['workflow-id'] = updateData.workflowId;
+      currentDeployment.spec.template.metadata.labels = currentDeployment.spec.template.metadata.labels || {};
+      currentDeployment.spec.template.metadata.labels['workflow-id'] = updateData.workflowId;
+    }
+
+    if (updateData.image) {
+      currentDeployment.spec.template.spec.containers[0].image = updateData.image;
+    }
+
+    if (updateData.env) {
+      currentDeployment.spec.template.spec.containers[0].env = updateData.env.map((envVar) => ({
+        name: envVar.key,
+        value: envVar.value,
+      }));
+    }
+
+    if (updateData.startCommand) {
+      const container = currentDeployment.spec.template.spec.containers[0];
+      container.command = ['sh', '-c'];
+      container.args = [`cd /app && npm install && ${updateData.startCommand}`];
+    }
+
+    if (updateData.zipFileBase64 || updateData.startCommand || updateData.env) {
+      currentDeployment.spec.template.metadata.annotations = currentDeployment.spec.template.metadata.annotations || {};
+      currentDeployment.spec.template.metadata.annotations['kubectl.kubernetes.io/restartedAt'] = new Date().toISOString();
+    }
+
+    const updatedDeployment = await this.k8sClient.updateDeployment(
+      botId,
+      currentDeployment,
+      this.baseNamespace
+    );
+
+    return await this.mapDeploymentToBot(updatedDeployment);
+  }
+
+  private calculatePodAge(startTime?: string): number | undefined {
+    if (!startTime) return undefined;
+    const start = new Date(startTime).getTime();
+    const now = Date.now();
+    return Math.floor((now - start) / 1000);
+  }
+
+  private determineUpdateStage(deployment: Deployment, pods: any[]): UpdateStage {
+    if (pods.length === 0) {
+      return 'config';
+    }
+
+    if (deployment.metadata.generation !== deployment.status?.observedGeneration) {
+      return 'config';
+    }
+
+    const hasRestartingPods = pods.some(
+      (p) =>
+        p.status?.phase === 'Pending' ||
+        p.status?.phase === 'ContainerCreating' ||
+        p.status?.containerStatuses?.[0]?.state?.waiting
+    );
+
+    if (hasRestartingPods) {
+      return 'restart';
+    }
+
+    const allPodsReady = pods.every(
+      (p) =>
+        p.status?.phase === 'Running' &&
+        p.status?.conditions?.find((c: any) => c.type === 'Ready')?.status === 'True'
+    );
+
+    if (allPodsReady && deployment.status?.readyReplicas === deployment.spec.replicas) {
+      return 'complete';
+    }
+
+    const hasErrorPods = pods.some(
+      (p) =>
+        p.status?.phase === 'Failed' ||
+        p.status?.containerStatuses?.[0]?.state?.terminated?.reason === 'Error'
+    );
+
+    if (hasErrorPods) {
+      return 'error';
+    }
+
+    return 'restart';
+  }
+
+  async getBotDetailedStatus(botId: string, userId?: string): Promise<BotDetailedStatus> {
+    if (userId) {
+      const bot = await this.getBot(botId, userId);
+      if (bot.userId !== userId) {
+        throw new Error('Unauthorized: You do not have access to this bot');
+      }
+    }
+
+    const deployment = await this.k8sClient.getDeployment(botId, this.baseNamespace);
+
+    const pods = await this.k8sClient.listPods(this.baseNamespace);
+    const botPods = pods.items.filter((pod) => pod.metadata.labels?.app === botId);
+
+    const configMapName = `${botId}-code`;
+    let configMap = null;
+    try {
+      configMap = await this.k8sClient.getConfigMap(configMapName, this.baseNamespace);
+    } catch {}
+
+    const stage = this.determineUpdateStage(deployment, botPods);
+
+    return {
+      stage,
+      deployment: {
+        ready: deployment.status?.readyReplicas === deployment.spec.replicas,
+        replicas: {
+          ready: deployment.status?.readyReplicas || 0,
+          total: deployment.spec.replicas || 0,
+        },
+        conditions: deployment.status?.conditions || [],
+        generation: deployment.metadata.generation,
+        observedGeneration: deployment.status?.observedGeneration,
+      },
+      pods: botPods.map((pod) => ({
+        name: pod.metadata.name,
+        phase: pod.status?.phase || 'Unknown',
+        ready: pod.status?.conditions?.find((c) => c.type === 'Ready')?.status === 'True',
+        restartCount: pod.status?.containerStatuses?.[0]?.restartCount || 0,
+        age: this.calculatePodAge(pod.status?.startTime),
+        containerState: pod.status?.containerStatuses?.[0]?.state,
+      })),
+      configMap: configMap
+        ? {
+            updated: true,
+            lastModified: configMap.metadata.resourceVersion || '',
+          }
+        : null,
+    };
   }
 }

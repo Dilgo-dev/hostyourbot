@@ -242,3 +242,74 @@ export const startBotAsAdmin = async (
     reply.status(400).send({ error: 'Failed to start bot', message: error.message });
   }
 };
+
+export const updateBot = async (
+  request: FastifyRequest<{ Params: { id: string } }>,
+  reply: FastifyReply
+) => {
+  try {
+    const parts = await request.parts();
+    const fields: Record<string, string> = {};
+    let zipFile: Buffer | null = null;
+
+    for await (const part of parts) {
+      if (part.type === 'file') {
+        if (part.fieldname === 'zipFile') {
+          zipFile = await part.toBuffer();
+        }
+      } else {
+        fields[part.fieldname] = part.value as string;
+      }
+    }
+
+    const userId = fields.userId || request.headers['x-user-id'] as string;
+
+    let envVars: EnvVar[] = [];
+    if (fields.envVars) {
+      try {
+        envVars = JSON.parse(fields.envVars);
+      } catch {
+        envVars = [];
+      }
+    }
+
+    let zipFileBase64: string | undefined;
+    if (zipFile && zipFile.length > 0) {
+      zipFileBase64 = zipFile.toString('base64');
+    }
+
+    const updateData: any = {
+      userId,
+    };
+
+    if (fields.name) updateData.name = fields.name;
+    if (fields.language) updateData.language = fields.language;
+    if (fields.version) updateData.version = fields.version;
+    if (fields.startCommand) updateData.startCommand = fields.startCommand;
+    if (fields.workflowId) updateData.workflowId = fields.workflowId;
+    if (envVars.length > 0) updateData.env = envVars;
+    if (zipFileBase64) updateData.zipFileBase64 = zipFileBase64;
+    if (fields.language && fields.version) {
+      updateData.image = getDockerImage(fields.language, fields.version);
+    }
+
+    const bot = await botService.updateBot(request.params.id, updateData);
+
+    reply.send(bot);
+  } catch (error: any) {
+    reply.status(400).send({ error: 'Failed to update bot', message: error.message });
+  }
+};
+
+export const getBotStatus = async (
+  request: FastifyRequest<{ Params: { id: string }; Querystring: { userId?: string } }>,
+  reply: FastifyReply
+) => {
+  try {
+    const userId = request.query.userId || request.headers['x-user-id'] as string;
+    const status = await botService.getBotDetailedStatus(request.params.id, userId);
+    reply.send(status);
+  } catch (error: any) {
+    reply.status(404).send({ error: 'Failed to get bot status', message: error.message });
+  }
+};

@@ -7,7 +7,8 @@ import BotInfo from '../component/botdetail/BotInfo';
 import BotLogs from '../component/botdetail/BotLogs';
 import BotActions from '../component/botdetail/BotActions';
 import BotWorkflow from '../component/botdetail/BotWorkflow';
-import { botService, type Bot } from '../services/botService';
+import BotUpdateModal from '../component/botdetail/BotUpdateModal';
+import { botService, type Bot, type CreateBotRequest } from '../services/botService';
 
 export default function BotDetail() {
   const { id } = useParams<{ id: string }>();
@@ -16,6 +17,7 @@ export default function BotDetail() {
   const [loading, setLoading] = useState(true);
   const [logs, setLogs] = useState<string[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
+  const [updateModalOpen, setUpdateModalOpen] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -97,6 +99,16 @@ export default function BotDetail() {
     await loadLogs();
   };
 
+  const handleUpdate = async (updateData: Partial<CreateBotRequest>) => {
+    try {
+      await botService.updateBot(id!, updateData);
+      await loadBotData();
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour du bot:', error);
+      throw error;
+    }
+  };
+
   if (loading || !bot) {
     return (
       <DashboardLayout>
@@ -138,6 +150,7 @@ export default function BotDetail() {
             onStop={handleStop}
             onRestart={handleRestart}
             onDelete={handleDelete}
+            onUpdate={() => setUpdateModalOpen(true)}
           />
 
           <BotLogs
@@ -146,6 +159,13 @@ export default function BotDetail() {
             onRefresh={handleRefreshLogs}
           />
         </div>
+
+        <BotUpdateModal
+          isOpen={updateModalOpen}
+          onClose={() => setUpdateModalOpen(false)}
+          bot={bot}
+          onUpdate={handleUpdate}
+        />
       </motion.div>
     </DashboardLayout>
   );

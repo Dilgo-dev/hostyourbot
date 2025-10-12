@@ -150,6 +150,22 @@ export class K8sClient {
     await this.client.delete(`/api/v1/namespaces/${namespace}/configmaps/${name}`);
   }
 
+  async updateConfigMap(name: string, configMap: ConfigMap, namespace: string = 'default'): Promise<ConfigMap> {
+    const response = await this.client.patch(
+      `/api/v1/namespaces/${namespace}/configmaps/${name}`,
+      {
+        binaryData: configMap.binaryData,
+        data: configMap.data,
+      },
+      {
+        headers: {
+          'Content-Type': 'application/strategic-merge-patch+json',
+        },
+      }
+    );
+    return response.data;
+  }
+
   async healthCheck(): Promise<boolean> {
     try {
       await this.client.get('/healthz');
