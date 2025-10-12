@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaTimes } from 'react-icons/fa';
 import type { Bot, EnvVar, CreateBotRequest } from '../../services/botService';
@@ -32,6 +32,8 @@ export default function BotUpdateModal({ isOpen, onClose, bot, onUpdate }: BotUp
   const [startCommand, setStartCommand] = useState('');
   const [envVars, setEnvVars] = useState<EnvVar[]>([]);
 
+  const wasOpenRef = useRef(false);
+
   useBotStatusPolling({
     botId: bot.id,
     enabled: pollingEnabled,
@@ -51,7 +53,7 @@ export default function BotUpdateModal({ isOpen, onClose, bot, onUpdate }: BotUp
   });
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !wasOpenRef.current) {
       setName(bot.name);
       setLanguage(bot.language);
       setVersion(bot.version);
@@ -61,8 +63,11 @@ export default function BotUpdateModal({ isOpen, onClose, bot, onUpdate }: BotUp
       setError(null);
       setActiveTab('config');
       setUpdateStage(null);
+      setPollingEnabled(false);
+      setLoading(false);
     }
-  }, [isOpen, bot]);
+    wasOpenRef.current = isOpen;
+  }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

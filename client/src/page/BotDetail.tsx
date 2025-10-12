@@ -102,11 +102,15 @@ export default function BotDetail() {
   const handleUpdate = async (updateData: Partial<CreateBotRequest>) => {
     try {
       await botService.updateBot(id!, updateData);
-      await loadBotData();
     } catch (error) {
       console.error('Erreur lors de la mise à jour du bot:', error);
       throw error;
     }
+  };
+
+  const handleCloseUpdateModal = async () => {
+    setUpdateModalOpen(false);
+    await loadBotData();
   };
 
   if (loading || !bot) {
@@ -162,7 +166,7 @@ export default function BotDetail() {
 
         <BotUpdateModal
           isOpen={updateModalOpen}
-          onClose={() => setUpdateModalOpen(false)}
+          onClose={handleCloseUpdateModal}
           bot={bot}
           onUpdate={handleUpdate}
         />
