@@ -180,9 +180,12 @@ export default function Builder() {
   const handleSave = async () => {
     if (!user) return;
 
+    let nameToUse = workflowName;
+
     if (!workflowName.trim()) {
       const name = prompt('Nom du workflow :');
       if (!name) return;
+      nameToUse = name;
       setWorkflowName(name);
     }
 
@@ -192,13 +195,13 @@ export default function Builder() {
     try {
       if (currentWorkflowId) {
         await builderService.updateWorkflow(currentWorkflowId, user.id, {
-          name: workflowName,
+          name: nameToUse,
           nodes,
           edges,
         });
       } else {
         const workflow = await builderService.createWorkflow({
-          name: workflowName,
+          name: nameToUse,
           userId: user.id,
           nodes,
           edges,
@@ -232,6 +235,7 @@ export default function Builder() {
 
     try {
       let workflowId = currentWorkflowId;
+      let nameToUse = workflowName;
 
       if (!workflowId) {
         if (!workflowName.trim()) {
@@ -240,11 +244,12 @@ export default function Builder() {
             setGenerating(false);
             return;
           }
+          nameToUse = name;
           setWorkflowName(name);
         }
 
         const workflow = await builderService.createWorkflow({
-          name: workflowName || 'Bot Discord',
+          name: nameToUse,
           userId: user.id,
           nodes,
           edges,
