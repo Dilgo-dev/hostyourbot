@@ -1,5 +1,6 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import https from 'https';
+import WebSocket from 'ws';
 import { config } from '../config/env';
 import {
   Pod,
@@ -209,43 +210,85 @@ export class K8sClient {
     command: string[],
     containerName?: string
   ): Promise<{ output: string; error?: string }> {
-    try {
-      const params: any = {
-        command: command,
-        stdout: true,
-        stderr: true,
-      };
-
-      if (containerName) {
-        params.container = containerName;
-      }
-
-      const queryString = new URLSearchParams();
-      command.forEach(cmd => queryString.append('command', cmd));
-      queryString.append('stdout', 'true');
-      queryString.append('stderr', 'true');
-      if (containerName) {
-        queryString.append('container', containerName);
-      }
-
-      const response = await this.client.post(
-        `/api/v1/namespaces/${namespace}/pods/${podName}/exec?${queryString.toString()}`,
-        null,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
+    return new Promise((resolve) => {
+      try {
+        const queryString = new URLSearchParams();
+        command.forEach(cmd => queryString.append('command', cmd));
+        queryString.append('stdout', 'true');
+        queryString.append('stderr', 'true');
+        if (containerName) {
+          queryString.append('container', containerName);
         }
-      );
 
-      return {
-        output: response.data || '',
-      };
-    } catch (error: any) {
-      return {
-        output: '',
-        error: error.response?.data?.message || error.message || 'Command execution failed',
-      };
-    }
+        const wsUrl = this.baseUrl
+          .replace('https://', 'wss://')
+          .replace('http://', 'ws://');
+
+        const fullUrl = `${wsUrl}/api/v1/namespaces/${namespace}/pods/${podName}/exec?${queryString.toString()}`;
+
+        const ws = new WebSocket(fullUrl, ['v4.channel.k8s.io', 'v3.channel.k8s.io', 'v2.channel.k8s.io', 'channel.k8s.io'], {
+          headers: {
+            'Authorization': `Bearer ${config.k8s.apiToken}`,
+          },
+          rejectUnauthorized: false,
+        });
+
+        let stdout = '';
+        let stderr = '';
+        let hasError = false;
+
+        const timeout = setTimeout(() => {
+          ws.close();
+          resolve({
+            output: stdout,
+            error: hasError ? stderr : undefined,
+          });
+        }, 30000);
+
+        ws.on('open', () => {
+          console.log('WebSocket connection établie pour exec');
+        });
+
+        ws.on('message', (data: Buffer) => {
+          if (data.length === 0) return;
+
+          const streamType = data[0];
+          const message = data.slice(1).toString('utf-8');
+
+          if (streamType === 1) {
+            stdout += message;
+          } else if (streamType === 2) {
+            stderr += message;
+            hasError = true;
+          } else if (streamType === 3) {
+            stderr += message;
+            hasError = true;
+          }
+        });
+
+        ws.on('close', () => {
+          clearTimeout(timeout);
+          resolve({
+            output: stdout || stderr,
+            error: hasError ? stderr : undefined,
+          });
+        });
+
+        ws.on('error', (error) => {
+          clearTimeout(timeout);
+          console.error('Erreur WebSocket exec:', error);
+          resolve({
+            output: '',
+            error: error.message || 'WebSocket connection failed',
+          });
+        });
+
+      } catch (error: any) {
+        resolve({
+          output: '',
+          error: error.message || 'Command execution failed',
+        });
+      }
+    });
   }
 }
