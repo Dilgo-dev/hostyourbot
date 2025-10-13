@@ -17,6 +17,7 @@ import '@xyflow/react/dist/style.css';
 import BuilderToolbar from '../component/builder/BuilderToolbar';
 import BlocksPalette from '../component/builder/BlocksPalette';
 import BlockDetailsPanel from '../component/builder/BlockDetailsPanel';
+import BuilderDeployModal from '../component/builder/BuilderDeployModal';
 import CustomNode, { type NodeData, type NodeConfig } from '../component/builder/CustomNode';
 import { builderService } from '../services/builderService';
 import { botService } from '../services/botService';
@@ -43,6 +44,8 @@ export default function Builder() {
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [deployModalOpen, setDeployModalOpen] = useState(false);
+  const [generatedZipFile, setGeneratedZipFile] = useState<File | null>(null);
 
   const isDeployMode = searchParams.get('mode') === 'deploy';
   const isEditMode = searchParams.get('mode') === 'edit';
@@ -272,13 +275,9 @@ export default function Builder() {
 
       const file = new File([zipBlob], 'discord-bot.zip', { type: 'application/zip' });
 
-      navigate('/dashboard/create', {
-        state: {
-          generatedZip: file,
-          fromBuilder: true,
-          workflowId,
-        },
-      });
+      setGeneratedZipFile(file);
+      setDeployModalOpen(true);
+      setGenerating(false);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Erreur lors de la génération');
       setGenerating(false);
@@ -427,6 +426,16 @@ export default function Builder() {
           />
         )}
       </div>
+
+      {generatedZipFile && (
+        <BuilderDeployModal
+          isOpen={deployModalOpen}
+          onClose={() => setDeployModalOpen(false)}
+          workflowName={workflowName}
+          zipFile={generatedZipFile}
+          workflowId={currentWorkflowId}
+        />
+      )}
     </div>
   );
 }

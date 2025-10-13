@@ -738,4 +738,30 @@ export class BotDeploymentService {
         : null,
     };
   }
+
+  async execCommandInBot(botId: string, command: string): Promise<{ output: string; error?: string }> {
+    const pods = await this.k8sClient.listPods(this.baseNamespace);
+    const botPods = pods.items.filter(
+      (pod) => pod.metadata.labels?.app === botId && pod.status?.phase === 'Running'
+    );
+
+    if (botPods.length === 0) {
+      return {
+        output: '',
+        error: 'No running pods found for this bot',
+      };
+    }
+
+    const podName = botPods[0].metadata.name;
+    const containerName = botId;
+
+    const commandArray = ['sh', '-c', command];
+
+    return await this.k8sClient.execCommand(
+      podName,
+      this.baseNamespace,
+      commandArray,
+      containerName
+    );
+  }
 }

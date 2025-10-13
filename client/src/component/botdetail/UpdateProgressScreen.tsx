@@ -20,6 +20,7 @@ export default function UpdateProgressScreen({
   currentStage,
   hasZipFile,
   error,
+  onContinue,
 }: UpdateProgressScreenProps) {
   const allSteps: Step[] = [
     { id: 'validation', label: 'Validation des modifications', icon: FaCheckCircle },
@@ -167,6 +168,22 @@ export default function UpdateProgressScreen({
             <p className="font-medium mb-1">Erreur</p>
             <p className="text-sm">{error}</p>
           </div>
+        )}
+
+        {currentStage === 'complete' && !error && onContinue && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="mt-8 flex justify-center"
+          >
+            <button
+              onClick={onContinue}
+              className="px-8 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-colors shadow-lg hover:shadow-purple-500/50"
+            >
+              Continuer
+            </button>
+          </motion.div>
         )}
       </motion.div>
     </div>
