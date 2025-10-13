@@ -7,13 +7,16 @@ import DashboardLayout from '../component/dashboard/DashboardLayout';
 import BotList from '../component/dashboard/BotList';
 import WorkflowList from '../component/dashboard/WorkflowList';
 import DeleteWorkflowModal from '../component/dashboard/DeleteWorkflowModal';
+import UsageQuota from '../component/subscription/UsageQuota';
 import { botService, type Bot } from '../services/botService';
 import { builderService } from '../services/builderService';
 import type { Workflow } from '../services/builderService';
+import { useCanCreateBot } from '../hooks/useCanCreateBot';
 
 export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const { canCreate } = useCanCreateBot();
   const [bots, setBots] = useState<Bot[]>([]);
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -149,6 +152,10 @@ export default function Dashboard() {
         transition={{ duration: 0.4 }}
         className="max-w-7xl mx-auto"
       >
+        <div className="mb-8">
+          <UsageQuota />
+        </div>
+
         <div className="flex justify-end gap-3 mb-8">
           <button
             onClick={handleRefresh}
@@ -160,7 +167,9 @@ export default function Dashboard() {
           </button>
           <button
             onClick={() => navigate('/dashboard/create/method')}
-            className="flex items-center gap-2 px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/50"
+            disabled={!canCreate}
+            title={!canCreate ? 'Vous avez atteint la limite de votre plan' : ''}
+            className="flex items-center gap-2 px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-purple-600 disabled:hover:shadow-none"
           >
             <FaPlus />
             Nouveau bot

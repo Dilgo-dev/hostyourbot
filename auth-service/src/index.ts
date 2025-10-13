@@ -9,6 +9,7 @@ import dotenv from 'dotenv';
 import { AppDataSource } from './config/database';
 import authRoutes from './routes/authRoutes';
 import adminRoutes from './routes/adminRoutes';
+import subscriptionRoutes from './routes/subscriptionRoutes';
 import { initLogsGrpcClient } from './grpc/logsGrpcClient';
 import { initMailGrpcClient } from './grpc/mailGrpcClient';
 import passport from './config/passport';
@@ -50,6 +51,7 @@ app.use(passport.session());
 
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/subscription', subscriptionRoutes);
 
 app.get('/health', (req: Request, res: Response) => {
   res.status(200).json({ status: 'ok', service: 'auth-service' });
