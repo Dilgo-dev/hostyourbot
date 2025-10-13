@@ -68,7 +68,7 @@ export interface BotDetailedStatus {
   } | null;
 }
 
-export interface MetricDataPoint {
+export interface BotMetrics {
   timestamp: string;
   cpu: number;
   memory: number;
@@ -76,16 +76,6 @@ export interface MetricDataPoint {
     received: number;
     transmitted: number;
   };
-}
-
-export interface BotMetrics {
-  current: {
-    timestamp: string;
-    cpu: { value: number; unit: string };
-    memory: { value: number; unit: string };
-    network: { received: number; transmitted: number; unit: string };
-  };
-  history: MetricDataPoint[];
 }
 
 export const botService = {

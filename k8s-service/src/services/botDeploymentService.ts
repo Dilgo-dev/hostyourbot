@@ -784,9 +784,12 @@ export class BotDeploymentService {
 
     const currentMetrics = {
       timestamp: new Date().toISOString(),
-      cpu: { value: 0, unit: 'millicores' },
-      memory: { value: 0, unit: 'MiB' },
-      network: { received: 0, transmitted: 0, unit: 'KiB' },
+      cpu: 0,
+      memory: 0,
+      network: {
+        received: 0,
+        transmitted: 0,
+      },
     };
 
     for (const podMetric of podMetrics.items) {
@@ -796,46 +799,15 @@ export class BotDeploymentService {
           const cpuNano = parseInt(container.usage.cpu.replace('n', ''));
           const memoryKi = parseInt(container.usage.memory.replace('Ki', ''));
 
-          currentMetrics.cpu.value += cpuNano / 1_000_000;
-          currentMetrics.memory.value += memoryKi / 1024;
+          currentMetrics.cpu += cpuNano / 1_000_000;
+          currentMetrics.memory += memoryKi / 1024;
         }
       }
     }
 
-    currentMetrics.cpu.value = parseFloat(currentMetrics.cpu.value.toFixed(2));
-    currentMetrics.memory.value = parseFloat(currentMetrics.memory.value.toFixed(2));
+    currentMetrics.cpu = parseFloat(currentMetrics.cpu.toFixed(2));
+    currentMetrics.memory = parseFloat(currentMetrics.memory.toFixed(2));
 
-    const historicalData = this.generateHistoricalMetrics(currentMetrics);
-
-    return {
-      current: currentMetrics,
-      history: historicalData,
-    };
-  }
-
-  private generateHistoricalMetrics(currentMetrics: any): any[] {
-    const history = [];
-    const now = new Date();
-    const pointsCount = 60;
-
-    for (let i = pointsCount - 1; i >= 0; i--) {
-      const timestamp = new Date(now.getTime() - i * 30000);
-
-      const variation = (Math.random() - 0.5) * 0.3;
-      const cpuValue = Math.max(0, currentMetrics.cpu.value * (1 + variation));
-      const memoryValue = Math.max(0, currentMetrics.memory.value * (1 + variation));
-
-      history.push({
-        timestamp: timestamp.toISOString(),
-        cpu: parseFloat(cpuValue.toFixed(2)),
-        memory: parseFloat(memoryValue.toFixed(2)),
-        network: {
-          received: parseFloat((Math.random() * 100).toFixed(2)),
-          transmitted: parseFloat((Math.random() * 50).toFixed(2)),
-        },
-      });
-    }
-
-    return history;
+    return currentMetrics;
   }
 }

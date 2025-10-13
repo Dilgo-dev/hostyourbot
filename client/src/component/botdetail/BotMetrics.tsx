@@ -8,8 +8,17 @@ interface BotMetricsProps {
   botId: string;
 }
 
+interface MetricPoint {
+  time: string;
+  cpu: number;
+  memory: number;
+  networkIn: number;
+  networkOut: number;
+}
+
 export default function BotMetrics({ botId }: BotMetricsProps) {
-  const [metrics, setMetrics] = useState<BotMetricsData | null>(null);
+  const [currentMetrics, setCurrentMetrics] = useState<BotMetricsData | null>(null);
+  const [metricsHistory, setMetricsHistory] = useState<MetricPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
@@ -19,7 +28,23 @@ export default function BotMetrics({ botId }: BotMetricsProps) {
       setLoading(true);
       setError(null);
       const data = await botService.getBotMetrics(botId);
-      setMetrics(data);
+      setCurrentMetrics(data);
+
+      const formattedPoint: MetricPoint = {
+        time: new Date(data.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+        cpu: data.cpu,
+        memory: data.memory,
+        networkIn: data.network.received,
+        networkOut: data.network.transmitted,
+      };
+
+      setMetricsHistory((prevHistory) => {
+        const newHistory = [...prevHistory, formattedPoint];
+        if (newHistory.length > 60) {
+          return newHistory.slice(-60);
+        }
+        return newHistory;
+      });
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || 'Erreur lors du chargement des métriques');
     } finally {
@@ -41,20 +66,7 @@ export default function BotMetrics({ botId }: BotMetricsProps) {
     return () => clearInterval(interval);
   }, [autoRefresh, botId]);
 
-  const formatTime = (timestamp: string) => {
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-  };
-
-  const chartData = metrics?.history.map(point => ({
-    time: formatTime(point.timestamp),
-    cpu: point.cpu,
-    memory: point.memory,
-    networkIn: point.network.received,
-    networkOut: point.network.transmitted,
-  })) || [];
-
-  if (loading && !metrics) {
+  if (loading && !currentMetrics) {
     return (
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -131,143 +143,160 @@ export default function BotMetrics({ botId }: BotMetricsProps) {
         <div className="bg-slate-700/50 rounded-lg p-4">
           <p className="text-sm text-slate-400 mb-1">CPU actuel</p>
           <p className="text-2xl font-bold text-purple-400">
-            {metrics?.current.cpu.value} <span className="text-sm text-slate-400">{metrics?.current.cpu.unit}</span>
+            {currentMetrics?.cpu.toFixed(2)} <span className="text-sm text-slate-400">millicores</span>
           </p>
         </div>
         <div className="bg-slate-700/50 rounded-lg p-4">
           <p className="text-sm text-slate-400 mb-1">Mémoire actuelle</p>
           <p className="text-2xl font-bold text-blue-400">
-            {metrics?.current.memory.value} <span className="text-sm text-slate-400">{metrics?.current.memory.unit}</span>
+            {currentMetrics?.memory.toFixed(2)} <span className="text-sm text-slate-400">MiB</span>
           </p>
         </div>
         <div className="bg-slate-700/50 rounded-lg p-4">
           <p className="text-sm text-slate-400 mb-1">Réseau</p>
           <p className="text-sm text-green-400">
-            ↓ {metrics?.current.network.received} {metrics?.current.network.unit}
+            ↓ {currentMetrics?.network.received.toFixed(2)} KiB
           </p>
           <p className="text-sm text-orange-400">
-            ↑ {metrics?.current.network.transmitted} {metrics?.current.network.unit}
+            ↑ {currentMetrics?.network.transmitted.toFixed(2)} KiB
           </p>
         </div>
       </div>
 
-      <div className="space-y-6">
-        <div className="bg-slate-700/30 rounded-lg p-4">
-          <h3 className="text-lg font-semibold text-white mb-4">Utilisation CPU (30 dernières minutes)</h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-              <XAxis
-                dataKey="time"
-                stroke="#94a3b8"
-                tick={{ fill: '#94a3b8', fontSize: 12 }}
-              />
-              <YAxis
-                stroke="#94a3b8"
-                tick={{ fill: '#94a3b8', fontSize: 12 }}
-                label={{ value: 'millicores', angle: -90, position: 'insideLeft', fill: '#94a3b8' }}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: '#1e293b',
-                  border: '1px solid #475569',
-                  borderRadius: '8px',
-                  color: '#f1f5f9',
-                }}
-              />
-              <Legend wrapperStyle={{ color: '#94a3b8' }} />
-              <Line
-                type="monotone"
-                dataKey="cpu"
-                stroke="#a855f7"
-                strokeWidth={2}
-                dot={false}
-                name="CPU (millicores)"
-              />
-            </LineChart>
-          </ResponsiveContainer>
+      {metricsHistory.length === 0 ? (
+        <div className="bg-slate-700/30 rounded-lg p-6 text-center">
+          <p className="text-slate-400">
+            Les graphiques se rempliront progressivement avec les vraies métriques...
+          </p>
+          <p className="text-slate-500 text-sm mt-2">
+            Prochain point dans {autoRefresh ? '30 secondes' : 'pause (auto-refresh désactivé)'}
+          </p>
         </div>
+      ) : (
+        <div className="space-y-6">
+          <div className="bg-slate-700/30 rounded-lg p-4">
+            <h3 className="text-lg font-semibold text-white mb-4">
+              Utilisation CPU ({metricsHistory.length} point{metricsHistory.length > 1 ? 's' : ''})
+            </h3>
+            <ResponsiveContainer width="100%" height={250}>
+              <LineChart data={metricsHistory}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                <XAxis
+                  dataKey="time"
+                  stroke="#94a3b8"
+                  tick={{ fill: '#94a3b8', fontSize: 12 }}
+                />
+                <YAxis
+                  stroke="#94a3b8"
+                  tick={{ fill: '#94a3b8', fontSize: 12 }}
+                  label={{ value: 'millicores', angle: -90, position: 'insideLeft', fill: '#94a3b8' }}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#1e293b',
+                    border: '1px solid #475569',
+                    borderRadius: '8px',
+                    color: '#f1f5f9',
+                  }}
+                />
+                <Legend wrapperStyle={{ color: '#94a3b8' }} />
+                <Line
+                  type="monotone"
+                  dataKey="cpu"
+                  stroke="#a855f7"
+                  strokeWidth={2}
+                  dot={metricsHistory.length < 10}
+                  name="CPU (millicores)"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
 
-        <div className="bg-slate-700/30 rounded-lg p-4">
-          <h3 className="text-lg font-semibold text-white mb-4">Utilisation Mémoire (30 dernières minutes)</h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-              <XAxis
-                dataKey="time"
-                stroke="#94a3b8"
-                tick={{ fill: '#94a3b8', fontSize: 12 }}
-              />
-              <YAxis
-                stroke="#94a3b8"
-                tick={{ fill: '#94a3b8', fontSize: 12 }}
-                label={{ value: 'MiB', angle: -90, position: 'insideLeft', fill: '#94a3b8' }}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: '#1e293b',
-                  border: '1px solid #475569',
-                  borderRadius: '8px',
-                  color: '#f1f5f9',
-                }}
-              />
-              <Legend wrapperStyle={{ color: '#94a3b8' }} />
-              <Line
-                type="monotone"
-                dataKey="memory"
-                stroke="#3b82f6"
-                strokeWidth={2}
-                dot={false}
-                name="Mémoire (MiB)"
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+          <div className="bg-slate-700/30 rounded-lg p-4">
+            <h3 className="text-lg font-semibold text-white mb-4">
+              Utilisation Mémoire ({metricsHistory.length} point{metricsHistory.length > 1 ? 's' : ''})
+            </h3>
+            <ResponsiveContainer width="100%" height={250}>
+              <LineChart data={metricsHistory}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                <XAxis
+                  dataKey="time"
+                  stroke="#94a3b8"
+                  tick={{ fill: '#94a3b8', fontSize: 12 }}
+                />
+                <YAxis
+                  stroke="#94a3b8"
+                  tick={{ fill: '#94a3b8', fontSize: 12 }}
+                  label={{ value: 'MiB', angle: -90, position: 'insideLeft', fill: '#94a3b8' }}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#1e293b',
+                    border: '1px solid #475569',
+                    borderRadius: '8px',
+                    color: '#f1f5f9',
+                  }}
+                />
+                <Legend wrapperStyle={{ color: '#94a3b8' }} />
+                <Line
+                  type="monotone"
+                  dataKey="memory"
+                  stroke="#3b82f6"
+                  strokeWidth={2}
+                  dot={metricsHistory.length < 10}
+                  name="Mémoire (MiB)"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
 
-        <div className="bg-slate-700/30 rounded-lg p-4">
-          <h3 className="text-lg font-semibold text-white mb-4">Réseau (30 dernières minutes)</h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-              <XAxis
-                dataKey="time"
-                stroke="#94a3b8"
-                tick={{ fill: '#94a3b8', fontSize: 12 }}
-              />
-              <YAxis
-                stroke="#94a3b8"
-                tick={{ fill: '#94a3b8', fontSize: 12 }}
-                label={{ value: 'KiB', angle: -90, position: 'insideLeft', fill: '#94a3b8' }}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: '#1e293b',
-                  border: '1px solid #475569',
-                  borderRadius: '8px',
-                  color: '#f1f5f9',
-                }}
-              />
-              <Legend wrapperStyle={{ color: '#94a3b8' }} />
-              <Line
-                type="monotone"
-                dataKey="networkIn"
-                stroke="#22c55e"
-                strokeWidth={2}
-                dot={false}
-                name="Réception (KiB)"
-              />
-              <Line
-                type="monotone"
-                dataKey="networkOut"
-                stroke="#f97316"
-                strokeWidth={2}
-                dot={false}
-                name="Transmission (KiB)"
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          <div className="bg-slate-700/30 rounded-lg p-4">
+            <h3 className="text-lg font-semibold text-white mb-4">
+              Réseau ({metricsHistory.length} point{metricsHistory.length > 1 ? 's' : ''})
+            </h3>
+            <ResponsiveContainer width="100%" height={250}>
+              <LineChart data={metricsHistory}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                <XAxis
+                  dataKey="time"
+                  stroke="#94a3b8"
+                  tick={{ fill: '#94a3b8', fontSize: 12 }}
+                />
+                <YAxis
+                  stroke="#94a3b8"
+                  tick={{ fill: '#94a3b8', fontSize: 12 }}
+                  label={{ value: 'KiB', angle: -90, position: 'insideLeft', fill: '#94a3b8' }}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#1e293b',
+                    border: '1px solid #475569',
+                    borderRadius: '8px',
+                    color: '#f1f5f9',
+                  }}
+                />
+                <Legend wrapperStyle={{ color: '#94a3b8' }} />
+                <Line
+                  type="monotone"
+                  dataKey="networkIn"
+                  stroke="#22c55e"
+                  strokeWidth={2}
+                  dot={metricsHistory.length < 10}
+                  name="Réception (KiB)"
+                />
+                <Line
+                  type="monotone"
+                  dataKey="networkOut"
+                  stroke="#f97316"
+                  strokeWidth={2}
+                  dot={metricsHistory.length < 10}
+                  name="Transmission (KiB)"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </div>
-      </div>
+      )}
     </motion.div>
   );
 }
