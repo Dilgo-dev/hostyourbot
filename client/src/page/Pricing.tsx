@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { FaCheck, FaTimes } from 'react-icons/fa';
 import { getAvailablePlans } from '../services/subscriptionService';
-import { SubscriptionPlan, PlanName } from '../types/subscription';
+import type { SubscriptionPlan, PlanName } from '../types/subscription';
 import { useSubscription } from '../context/SubscriptionContext';
 
 export default function Pricing() {

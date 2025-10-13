@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { UserSubscription, SubscriptionLimits } from '../types/subscription';
+import type { UserSubscription, SubscriptionLimits } from '../types/subscription';
 import { getUserSubscription, getResourceLimits } from '../services/subscriptionService';
+import { useAuth } from './AuthContext';
 
 interface SubscriptionContextType {
   subscription: UserSubscription | null;
@@ -13,12 +14,20 @@ interface SubscriptionContextType {
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
 
 export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
+  const { user } = useAuth();
   const [subscription, setSubscription] = useState<UserSubscription | null>(null);
   const [limits, setLimits] = useState<SubscriptionLimits | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchSubscriptionData = async () => {
+    if (!user) {
+      setSubscription(null);
+      setLimits(null);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
@@ -40,7 +49,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     fetchSubscriptionData();
-  }, []);
+  }, [user]);
 
   const refreshSubscription = async () => {
     await fetchSubscriptionData();
