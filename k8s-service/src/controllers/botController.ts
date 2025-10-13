@@ -343,3 +343,16 @@ export const execBotCommand = async (
     reply.status(500).send({ error: 'Failed to execute command', message: error.message });
   }
 };
+
+export const getBotMetrics = async (
+  request: FastifyRequest<{ Params: { id: string }; Querystring: { userId?: string } }>,
+  reply: FastifyReply
+) => {
+  try {
+    const userId = request.query.userId || request.headers['x-user-id'] as string;
+    const metrics = await botService.getBotMetrics(request.params.id, userId);
+    reply.send(metrics);
+  } catch (error: any) {
+    reply.status(404).send({ error: 'Failed to get bot metrics', message: error.message });
+  }
+};

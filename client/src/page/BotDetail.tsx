@@ -7,6 +7,7 @@ import BotInfo from '../component/botdetail/BotInfo';
 import BotLogs from '../component/botdetail/BotLogs';
 import BotActions from '../component/botdetail/BotActions';
 import BotWorkflow from '../component/botdetail/BotWorkflow';
+import BotMetrics from '../component/botdetail/BotMetrics';
 import BotUpdateModal from '../component/botdetail/BotUpdateModal';
 import { botService, type Bot, type CreateBotRequest } from '../services/botService';
 import { authService } from '../services/authService';
@@ -168,6 +169,8 @@ export default function BotDetail() {
 
         <div className="space-y-6">
           <BotInfo bot={bot} />
+
+          <BotMetrics botId={id!} />
 
           <BotWorkflow bot={bot} />
 
