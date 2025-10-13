@@ -764,4 +764,50 @@ export class BotDeploymentService {
       containerName
     );
   }
+
+  async getBotMetrics(botId: string, userId?: string): Promise<any> {
+    if (userId) {
+      const bot = await this.getBot(botId, userId);
+      if (bot.userId !== userId) {
+        throw new Error('Unauthorized: You do not have access to this bot');
+      }
+    }
+
+    const pods = await this.k8sClient.listPods(this.baseNamespace);
+    const botPods = pods.items.filter((pod) => pod.metadata.labels?.app === botId);
+
+    if (botPods.length === 0) {
+      throw new Error('No pods found for this bot');
+    }
+
+    const podMetrics = await this.k8sClient.getPodMetrics(this.baseNamespace);
+
+    const currentMetrics = {
+      timestamp: new Date().toISOString(),
+      cpu: 0,
+      memory: 0,
+      network: {
+        received: 0,
+        transmitted: 0,
+      },
+    };
+
+    for (const podMetric of podMetrics.items) {
+      const isPodFromBot = botPods.some((p) => p.metadata.name === podMetric.metadata.name);
+      if (isPodFromBot && podMetric.containers) {
+        for (const container of podMetric.containers) {
+          const cpuNano = parseInt(container.usage.cpu.replace('n', ''));
+          const memoryKi = parseInt(container.usage.memory.replace('Ki', ''));
+
+          currentMetrics.cpu += cpuNano / 1_000_000;
+          currentMetrics.memory += memoryKi / 1024;
+        }
+      }
+    }
+
+    currentMetrics.cpu = parseFloat(currentMetrics.cpu.toFixed(2));
+    currentMetrics.memory = parseFloat(currentMetrics.memory.toFixed(2));
+
+    return currentMetrics;
+  }
 }

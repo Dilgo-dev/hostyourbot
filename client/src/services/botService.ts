@@ -68,6 +68,16 @@ export interface BotDetailedStatus {
   } | null;
 }
 
+export interface BotMetrics {
+  timestamp: string;
+  cpu: number;
+  memory: number;
+  network: {
+    received: number;
+    transmitted: number;
+  };
+}
+
 export const botService = {
   async getUserId(): Promise<string | undefined> {
     try {
@@ -267,6 +277,14 @@ export const botService = {
       `/api/v1/admin/bots/${id}/exec`,
       { command }
     );
+    return response.data;
+  },
+
+  async getBotMetrics(id: string): Promise<BotMetrics> {
+    const userId = await this.getUserId();
+    const response = await k8sApi.get<BotMetrics>(`/api/v1/bots/${id}/metrics`, {
+      params: { userId },
+    });
     return response.data;
   },
 };
