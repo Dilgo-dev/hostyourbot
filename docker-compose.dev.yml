@@ -17,6 +17,31 @@ services:
       retries: 5
     restart: unless-stopped
 
+  auth-seed:
+    build:
+      context: ./auth-service
+      target: development
+    container_name: hostyourbot-auth-seed-dev
+    command: npm run seed
+    volumes:
+      - ./auth-service:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=${AUTH_NODE_ENV}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+    depends_on:
+      postgres-auth:
+        condition: service_healthy
+    restart: on-failure
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+
   auth-service:
     build:
       context: ./auth-service
@@ -49,6 +74,8 @@ services:
     depends_on:
       postgres-auth:
         condition: service_healthy
+      auth-seed:
+        condition: service_completed_successfully
     restart: unless-stopped
 
   logs-service:
