@@ -1,0 +1,11 @@
+services:
+  client-tests:
+    build:
+      context: ./client
+      target: development
+    working_dir: /app
+    command: npm run test -- --run
+    environment:
+      - CI=true
+    profiles:
+      - test
