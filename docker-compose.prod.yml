@@ -11,6 +11,7 @@ services:
     restart: unless-stopped
 
   auth-service:
+    image: docker.hostyourbot.app/hostyourbot/auth-service:${IMAGE_TAG:-latest}
     build:
       context: ./auth-service
       target: production
@@ -33,6 +34,7 @@ services:
     restart: unless-stopped
 
   logs-service:
+    image: docker.hostyourbot.app/hostyourbot/logs-service:${IMAGE_TAG:-latest}
     build:
       context: ./logs-service
       target: production
@@ -50,6 +52,7 @@ services:
     restart: unless-stopped
 
   k8s-service:
+    image: docker.hostyourbot.app/hostyourbot/k8s-service:${IMAGE_TAG:-latest}
     build:
       context: ./k8s-service
       target: production
@@ -67,6 +70,7 @@ services:
     restart: unless-stopped
 
   mail-service:
+    image: docker.hostyourbot.app/hostyourbot/mail-service:${IMAGE_TAG:-latest}
     build:
       context: ./mail-service
       target: production
@@ -85,6 +89,7 @@ services:
     restart: unless-stopped
 
   client:
+    image: docker.hostyourbot.app/hostyourbot/client:${IMAGE_TAG:-latest}
     build:
       context: ./client
       target: production
@@ -96,6 +101,7 @@ services:
     restart: unless-stopped
 
   webhook-service:
+    image: docker.hostyourbot.app/hostyourbot/webhook-service:${IMAGE_TAG:-latest}
     build:
       context: ./webhook-service
       target: production
