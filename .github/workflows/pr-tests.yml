@@ -1,0 +1,15 @@
+name: PR docker-compose tests
+on:
+  pull_request:
+    branches:
+      - dev
+jobs:
+  docker-compose-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and run docker-compose tests
+        run: docker compose -f docker-compose.test.yml up --build --abort-on-container-exit
+      - name: Tear down
+        if: always()
+        run: docker compose -f docker-compose.test.yml down
