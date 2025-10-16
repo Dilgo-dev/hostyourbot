@@ -19,3 +19,13 @@ services:
       - CI=true
     profiles:
       - test
+  mail-service-tests:
+    build:
+      context: ./mail-service
+      target: development
+    working_dir: /app
+    command: npm test
+    environment:
+      - CI=true
+    profiles:
+      - test
