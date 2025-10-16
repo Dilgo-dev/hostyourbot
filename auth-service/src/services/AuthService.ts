@@ -145,7 +145,7 @@ export class AuthService {
   async requestPasswordReset(email: string): Promise<void> {
     const user = await this.userRepository.findOne({ where: { email } });
 
-    if (!user) {
+    if (!user || !user.email) {
       return;
     }
 
@@ -161,10 +161,12 @@ export class AuthService {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     const resetLink = `${frontendUrl}/reset-password?token=${resetToken}`;
 
+    const emailLocalPart = user.email.split('@')[0];
+
     sendPasswordResetEmail({
       to: user.email,
       reset_link: resetLink,
-      user_name: user.email.split('@')[0],
+      user_name: emailLocalPart,
     }).catch((error) => {
       console.error('[AuthService] Erreur envoi email réinitialisation:', error);
     });

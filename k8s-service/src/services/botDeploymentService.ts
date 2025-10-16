@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { K8sClient } from './k8sClient';
 import { Deployment, Container, Service, ConfigMap, Volume, VolumeMount } from '../types/k8s';
 import { Bot, BotConfig, BotStatus, BotType, BotDetailedStatus, UpdateStage } from '../types/bot';
@@ -5,16 +6,34 @@ import { Bot, BotConfig, BotStatus, BotType, BotDetailedStatus, UpdateStage } fr
 export class BotDeploymentService {
   private k8sClient: K8sClient;
   private readonly baseNamespace = 'hostyourbot-bots';
+  private readonly authServiceUrl: string;
 
   constructor() {
     this.k8sClient = new K8sClient();
+    this.authServiceUrl = process.env.AUTH_SERVICE_URL || 'http://auth-service:3001';
+  }
+
+  private async getUserResourceLimits(userId: string): Promise<{ maxCpuPerBot: string; maxMemoryPerBot: string } | null> {
+    try {
+      const response = await axios.get(`${this.authServiceUrl}/api/subscription/limits`, {
+        headers: { 'x-user-id': userId },
+      });
+
+      return {
+        maxCpuPerBot: response.data.limits.maxCpuPerBot,
+        maxMemoryPerBot: response.data.limits.maxMemoryPerBot,
+      };
+    } catch (error) {
+      console.error('Erreur lors de la récupération des limites utilisateur:', error);
+      return null;
+    }
   }
 
   private generateBotId(name: string): string {
     return `bot-${name.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
   }
 
-  private createDeploymentManifest(botId: string, config: BotConfig): Deployment {
+  private async createDeploymentManifest(botId: string, config: BotConfig): Promise<Deployment> {
     const labels: Record<string, string> = {
       app: botId,
       'bot-language': config.language,
@@ -75,6 +94,11 @@ export class BotDeploymentService {
       });
     }
 
+    let resourceLimits = null;
+    if (config.userId) {
+      resourceLimits = await this.getUserResourceLimits(config.userId);
+    }
+
     const container: Container = {
       name: botId,
       image: config.image,
@@ -82,6 +106,19 @@ export class BotDeploymentService {
         ? config.env.map((envVar) => ({ name: envVar.key, value: envVar.value }))
         : [],
     };
+
+    if (resourceLimits) {
+      container.resources = {
+        limits: {
+          cpu: resourceLimits.maxCpuPerBot,
+          memory: resourceLimits.maxMemoryPerBot,
+        },
+        requests: {
+          cpu: resourceLimits.maxCpuPerBot,
+          memory: resourceLimits.maxMemoryPerBot,
+        },
+      };
+    }
 
     if (config.zipFileBase64) {
       container.volumeMounts = [
@@ -279,7 +316,7 @@ export class BotDeploymentService {
       await this.k8sClient.createConfigMap(configMap, this.baseNamespace);
     }
 
-    const deploymentManifest = this.createDeploymentManifest(botId, config);
+    const deploymentManifest = await this.createDeploymentManifest(botId, config);
     const deployment = await this.k8sClient.createDeployment(
       deploymentManifest,
       this.baseNamespace

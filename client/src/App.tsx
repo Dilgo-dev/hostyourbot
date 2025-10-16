@@ -1,5 +1,6 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
+import { SubscriptionProvider } from "./context/SubscriptionContext";
 import Layout from "./component/Layout";
 import Home from "./page/Home";
 import Register from "./page/Register";
@@ -18,6 +19,7 @@ import AdminSystem from "./page/admin/AdminSystem";
 import AdminLogs from "./page/admin/AdminLogs";
 import AdminConfig from "./page/admin/AdminConfig";
 import Builder from "./page/Builder";
+import Pricing from "./page/Pricing";
 import NotFound from "./page/NotFound";
 
 const router = createBrowserRouter([
@@ -44,6 +46,10 @@ const router = createBrowserRouter([
       {
         path: "reset-password",
         element: <ResetPassword />,
+      },
+      {
+        path: "pricing",
+        element: <Pricing />,
       },
       {
         path: "*",
@@ -103,7 +109,9 @@ const router = createBrowserRouter([
 
 const App = () => (
   <AuthProvider>
-    <RouterProvider router={router} />
+    <SubscriptionProvider>
+      <RouterProvider router={router} />
+    </SubscriptionProvider>
   </AuthProvider>
 );
 

@@ -4,13 +4,22 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import { IsEmail, MinLength } from 'class-validator';
 import * as bcrypt from 'bcrypt';
+import { SubscriptionPlan, PlanName } from './SubscriptionPlan';
 
 export enum UserRole {
   USER = 'user',
   ADMIN = 'admin',
+}
+
+export enum SubscriptionStatus {
+  ACTIVE = 'active',
+  CANCELLED = 'cancelled',
+  EXPIRED = 'expired',
 }
 
 @Entity('users')
@@ -49,6 +58,18 @@ export class User {
 
   @Column({ type: 'varchar', default: UserRole.USER })
   role: UserRole;
+
+  @Column({ type: 'varchar', default: PlanName.FREE })
+  subscriptionPlan: PlanName;
+
+  @Column({ type: 'varchar', default: SubscriptionStatus.ACTIVE })
+  subscriptionStatus: SubscriptionStatus;
+
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  subscriptionStartDate: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  subscriptionEndDate: Date | null;
 
   @CreateDateColumn()
   createdAt: Date;
