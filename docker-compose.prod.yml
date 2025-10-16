@@ -54,7 +54,8 @@ services:
   k8s-service:
     image: docker.hostyourbot.app/hostyourbot/k8s-service:${IMAGE_TAG:-latest}
     build:
-      context: ./k8s-service
+      context: .
+      dockerfile: k8s-service/Dockerfile
       target: production
     container_name: hostyourbot-k8s-service-prod
     expose:
@@ -103,7 +104,8 @@ services:
   webhook-service:
     image: docker.hostyourbot.app/hostyourbot/webhook-service:${IMAGE_TAG:-latest}
     build:
-      context: ./webhook-service
+      context: .
+      dockerfile: webhook-service/Dockerfile
       target: production
     container_name: hostyourbot-webhook-service-prod
     environment:
@@ -130,7 +132,7 @@ services:
     volumes:
       - ./nginx/gateway.conf:/etc/nginx/nginx.conf:ro
     ports:
-      - "80:80"
+      - "80:5176"
     restart: unless-stopped
 
 volumes:

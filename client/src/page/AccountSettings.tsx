@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FaUser, FaLock, FaExclamationTriangle, FaEnvelope, FaShieldAlt, FaDiscord, FaDownload } from 'react-icons/fa';

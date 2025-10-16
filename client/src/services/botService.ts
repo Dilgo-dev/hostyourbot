@@ -35,6 +35,11 @@ export interface CreateBotRequest {
   startCommand?: string;
   userId?: string;
   workflowId?: string;
+  type?: string;
+  token?: string;
+  replicas?: number;
+  memory?: string;
+  cpu?: string;
 }
 
 export interface BotStats {

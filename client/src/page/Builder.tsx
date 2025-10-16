@@ -9,8 +9,8 @@ import {
   useNodesState,
   useEdgesState,
   type Connection,
-  type Edge,
-  type Node,
+  type NodeTypes,
+  type ReactFlowInstance,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
@@ -18,14 +18,14 @@ import BuilderToolbar from '../component/builder/BuilderToolbar';
 import BlocksPalette from '../component/builder/BlocksPalette';
 import BlockDetailsPanel from '../component/builder/BlockDetailsPanel';
 import BuilderDeployModal from '../component/builder/BuilderDeployModal';
-import CustomNode, { type NodeData, type NodeConfig } from '../component/builder/CustomNode';
-import { builderService } from '../services/builderService';
+import CustomNode from '../component/builder/CustomNode';
+import { builderService, type NodeData, type NodeConfig, type WorkflowNode, type WorkflowEdge } from '../services/builderService';
 import { botService } from '../services/botService';
 import { useAuth } from '../context/AuthContext';
 
 const nodeTypes = {
   custom: CustomNode,
-};
+} satisfies NodeTypes;
 
 let id = 0;
 const getId = () => `node_${id++}`;
@@ -35,12 +35,12 @@ export default function Builder() {
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const [nodes, setNodes, onNodesChange] = useNodesState<Node<NodeData>>([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
-  const [reactFlowInstance, setReactFlowInstance] = useState<any>(null);
-  const [selectedNode, setSelectedNode] = useState<Node<NodeData> | null>(null);
+  const [nodes, setNodes, onNodesChange] = useNodesState<WorkflowNode>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<WorkflowEdge>([]);
+  const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance<WorkflowNode, WorkflowEdge> | null>(null);
+  const [selectedNode, setSelectedNode] = useState<WorkflowNode | null>(null);
   const [workflowName, setWorkflowName] = useState('');
-  const [currentWorkflowId, setCurrentWorkflowId] = useState<string | null>(null);
+  const [currentWorkflowId, setCurrentWorkflowId] = useState<string | undefined>(undefined);
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -67,7 +67,7 @@ export default function Builder() {
     try {
       const workflow = await builderService.getWorkflow(id, user.id);
       setWorkflowName(workflow.name);
-      setCurrentWorkflowId(workflow._id || null);
+      setCurrentWorkflowId(workflow._id ?? undefined);
       setNodes(workflow.nodes);
       setEdges(workflow.edges);
     } catch (err: any) {
@@ -104,7 +104,7 @@ export default function Builder() {
         y: event.clientY - reactFlowBounds.top,
       });
 
-      const newNode: Node<NodeData> = {
+      const newNode: WorkflowNode = {
         id: getId(),
         type: 'custom',
         position,
@@ -114,7 +114,7 @@ export default function Builder() {
           icon: block.icon,
           blockId: block.id,
           config: {},
-        },
+        } as NodeData,
       };
 
       setNodes((nds) => nds.concat(newNode));
@@ -136,7 +136,7 @@ export default function Builder() {
     }
   };
 
-  const handleNodeClick = useCallback((_event: React.MouseEvent, node: Node<NodeData>) => {
+  const handleNodeClick = useCallback((_event: React.MouseEvent, node: WorkflowNode) => {
     setSelectedNode(node);
   }, []);
 
@@ -147,7 +147,7 @@ export default function Builder() {
   const handleUpdateNodeConfig = useCallback((nodeId: string, config: NodeConfig) => {
     setNodes((nds) =>
       nds.map((node) => {
-        if (node.id === nodeId) {
+        if (node.id === nodeId && node.data) {
           return {
             ...node,
             data: {
@@ -161,7 +161,7 @@ export default function Builder() {
     );
 
     setSelectedNode((prev) => {
-      if (prev && prev.id === nodeId) {
+      if (prev && prev.id === nodeId && prev.data) {
         return {
           ...prev,
           data: {
@@ -210,7 +210,7 @@ export default function Builder() {
           edges,
           botType: 'discord',
         });
-        setCurrentWorkflowId(workflow._id || null);
+        setCurrentWorkflowId(workflow._id ?? undefined);
       }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Erreur lors de la sauvegarde');
@@ -227,7 +227,7 @@ export default function Builder() {
       return;
     }
 
-    const eventNodes = nodes.filter(n => n.data.type === 'event');
+    const eventNodes = nodes.filter((n) => n.data?.type === 'event');
     if (eventNodes.length === 0) {
       setError('Ajoutez au moins un événement (bloc violet)');
       return;
@@ -258,7 +258,7 @@ export default function Builder() {
           edges,
           botType: 'discord',
         });
-        workflowId = workflow._id || null;
+        workflowId = workflow._id ?? undefined;
         setCurrentWorkflowId(workflowId);
       } else {
         await builderService.updateWorkflow(workflowId, user.id, {
@@ -292,7 +292,7 @@ export default function Builder() {
       return;
     }
 
-    const eventNodes = nodes.filter(n => n.data.type === 'event');
+    const eventNodes = nodes.filter((n) => n.data?.type === 'event');
     if (eventNodes.length === 0) {
       setError('Ajoutez au moins un événement (bloc violet)');
       return;
@@ -330,7 +330,7 @@ export default function Builder() {
       return;
     }
 
-    const eventNodes = nodes.filter(n => n.data.type === 'event');
+    const eventNodes = nodes.filter((n) => n.data?.type === 'event');
     if (eventNodes.length === 0) {
       setError('Ajoutez au moins un événement (bloc violet)');
       return;
@@ -397,7 +397,7 @@ export default function Builder() {
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
-            onInit={setReactFlowInstance}
+            onInit={(instance) => setReactFlowInstance(instance)}
             onDrop={onDrop}
             onDragOver={onDragOver}
             onNodeClick={handleNodeClick}
@@ -433,7 +433,7 @@ export default function Builder() {
           onClose={() => setDeployModalOpen(false)}
           workflowName={workflowName}
           zipFile={generatedZipFile}
-          workflowId={currentWorkflowId}
+          workflowId={currentWorkflowId ?? null}
         />
       )}
     </div>

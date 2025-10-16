@@ -8,6 +8,8 @@ export interface K8sResource {
     annotations?: Record<string, string>;
     creationTimestamp?: string;
     uid?: string;
+    generation?: number;
+    resourceVersion?: string;
   };
 }
 
@@ -28,8 +30,28 @@ export interface Pod extends K8sResource {
       lastProbeTime?: string;
       lastTransitionTime?: string;
     }>;
+    hostIP?: string;
     podIP?: string;
     startTime?: string;
+    containerStatuses?: Array<{
+      name: string;
+      restartCount: number;
+      state?: {
+        waiting?: {
+          reason?: string;
+          message?: string;
+        };
+        running?: {
+          startedAt?: string;
+        };
+        terminated?: {
+          reason?: string;
+          exitCode?: number;
+          finishedAt?: string;
+          startedAt?: string;
+        };
+      };
+    }>;
   };
 }
 
@@ -64,6 +86,7 @@ export interface Deployment extends K8sResource {
     template: {
       metadata: {
         labels: Record<string, string>;
+        annotations?: Record<string, string>;
       };
       spec: {
         containers: Container[];
@@ -77,6 +100,7 @@ export interface Deployment extends K8sResource {
     updatedReplicas?: number;
     readyReplicas?: number;
     availableReplicas?: number;
+    observedGeneration?: number;
     conditions?: Array<{
       type: string;
       status: string;

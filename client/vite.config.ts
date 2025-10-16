@@ -1,8 +1,7 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite'
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 
-export default defineConfig({
+export default {
   plugins: [react(), tailwindcss()],
   test: {
     environment: 'jsdom',
@@ -10,4 +9,4 @@ export default defineConfig({
     setupFiles: './src/test/setup.ts',
     css: true,
   },
-})
+};

@@ -98,7 +98,8 @@ services:
 
   k8s-service:
     build:
-      context: ./k8s-service
+      context: .
+      dockerfile: k8s-service/Dockerfile
       target: development
     container_name: hostyourbot-k8s-service-dev
     ports:
@@ -157,7 +158,8 @@ services:
 
   webhook-service:
     build:
-      context: ./webhook-service
+      context: .
+      dockerfile: webhook-service/Dockerfile
       target: development
     container_name: hostyourbot-webhook-service-dev
     volumes:

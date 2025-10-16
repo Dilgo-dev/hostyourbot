@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -23,7 +22,6 @@ interface BotCardProps {
 }
 
 export default function BotCard({ bot, onStart, onStop, onRestart, onDelete, loading = false }: BotCardProps) {
-  const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
 
   const getStatusColor = () => {

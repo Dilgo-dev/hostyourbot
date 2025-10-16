@@ -153,7 +153,7 @@ export default function BotUpdateModal({ isOpen, onClose, bot, onUpdate }: BotUp
             <LanguageSelector
               selectedLanguage={language}
               selectedVersion={version}
-              onLanguageChange={setLanguage}
+              onLanguageChange={(value) => setLanguage(value as Bot['language'])}
               onVersionChange={setVersion}
             />
           </div>

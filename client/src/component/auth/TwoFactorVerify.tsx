@@ -10,7 +10,7 @@ interface TwoFactorVerifyProps {
 }
 
 export default function TwoFactorVerify({ tempToken, onSuccess, onBack }: TwoFactorVerifyProps) {
-  const { verify2FA, error: authError } = useAuth();
+  const { verify2FA } = useAuth();
   const [code, setCode] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);

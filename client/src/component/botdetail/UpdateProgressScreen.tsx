@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { FaCheck, FaSpinner, FaTimes, FaUpload, FaCog, FaRedo, FaCheckCircle } from 'react-icons/fa';
 
-export type UpdateStage = 'validation' | 'upload' | 'config' | 'restart' | 'complete';
+export type UpdateStage = 'validation' | 'upload' | 'config' | 'restart' | 'complete' | 'error';
 
 interface UpdateProgressScreenProps {
   currentStage: UpdateStage;

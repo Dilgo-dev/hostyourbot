@@ -1,4 +1,4 @@
-import { PlanName } from '../../types/subscription';
+import { PLAN_NAME, type PlanName } from '../../types/subscription';
 import { FaCrown, FaStar, FaRocket } from 'react-icons/fa';
 
 interface PlanBadgeProps {
@@ -9,19 +9,19 @@ interface PlanBadgeProps {
 export default function PlanBadge({ plan, size = 'md' }: PlanBadgeProps) {
   const getPlanConfig = () => {
     switch (plan) {
-      case PlanName.FREE:
+      case PLAN_NAME.FREE:
         return {
           label: 'Gratuit',
           color: 'bg-slate-600',
           icon: FaStar,
         };
-      case PlanName.PREMIUM:
+      case PLAN_NAME.PREMIUM:
         return {
           label: 'Premium',
           color: 'bg-purple-600',
           icon: FaCrown,
         };
-      case PlanName.ENTERPRISE:
+      case PLAN_NAME.ENTERPRISE:
         return {
           label: 'Enterprise',
           color: 'bg-indigo-600',

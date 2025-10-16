@@ -1,6 +1,7 @@
 import { builderApi } from './api';
+import type { Edge, Node } from '@xyflow/react';
 
-export interface NodeConfig {
+export interface NodeConfig extends Record<string, unknown> {
   messageContent?: string;
   channelId?: string;
   roleId?: string;
@@ -10,7 +11,7 @@ export interface NodeConfig {
   roleName?: string;
 }
 
-export interface NodeData {
+export interface NodeData extends Record<string, unknown> {
   label: string;
   type: 'event' | 'action' | 'condition';
   icon?: string;
@@ -18,23 +19,9 @@ export interface NodeData {
   config?: NodeConfig;
 }
 
-export interface WorkflowNode {
-  id: string;
-  type: string;
-  position: {
-    x: number;
-    y: number;
-  };
-  data: NodeData;
-}
+export type WorkflowNode = Node<NodeData, 'custom'>;
 
-export interface WorkflowEdge {
-  id: string;
-  source: string;
-  target: string;
-  sourceHandle?: string;
-  targetHandle?: string;
-}
+export type WorkflowEdge = Edge;
 
 export interface Workflow {
   _id?: string;

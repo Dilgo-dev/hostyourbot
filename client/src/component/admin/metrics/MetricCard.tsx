@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ComponentType } from 'react';
+import type { ComponentType } from 'react';
 
 interface MetricCardProps {
   icon: ComponentType<{ className?: string }>;
