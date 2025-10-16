@@ -16,8 +16,8 @@ services:
       context: ./auth-service
       target: production
     container_name: hostyourbot-auth-service-prod
-    ports:
-      - "3001:3001"
+    expose:
+      - "3001"
     environment:
       - NODE_ENV=production
       - PORT=3001
@@ -39,9 +39,9 @@ services:
       context: ./logs-service
       target: production
     container_name: hostyourbot-logs-service-prod
-    ports:
-      - "3002:3002"
-      - "50052:50052"
+    expose:
+      - "3002"
+      - "50052"
     volumes:
       - logs-data:/root/data
     environment:
@@ -57,9 +57,9 @@ services:
       context: ./k8s-service
       target: production
     container_name: hostyourbot-k8s-service-prod
-    ports:
-      - "3003:3003"
-      - "50054:50054"
+    expose:
+      - "3003"
+      - "50054"
     environment:
       - NODE_ENV=production
       - ENVIRONMENT=production
@@ -75,8 +75,8 @@ services:
       context: ./mail-service
       target: production
     container_name: hostyourbot-mail-service-prod
-    ports:
-      - "50053:50053"
+    expose:
+      - "50053"
     environment:
       - ENVIRONMENT=production
       - GRPC_PORT=50053
@@ -94,8 +94,8 @@ services:
       context: ./client
       target: production
     container_name: hostyourbot-client-prod
-    ports:
-      - "80:80"
+    expose:
+      - "80"
     environment:
       - NODE_ENV=production
     restart: unless-stopped
@@ -117,6 +117,20 @@ services:
       - PODS_WARNING_THRESHOLD=${PODS_WARNING_THRESHOLD}
     depends_on:
       - k8s-service
+    restart: unless-stopped
+
+  gateway:
+    image: nginx:1.27-alpine
+    container_name: hostyourbot-gateway-prod
+    depends_on:
+      - client
+      - auth-service
+      - logs-service
+      - k8s-service
+    volumes:
+      - ./nginx/gateway.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "80:80"
     restart: unless-stopped
 
 volumes:
