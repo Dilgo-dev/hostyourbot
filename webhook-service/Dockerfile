@@ -14,7 +14,7 @@ CMD ["npm", "run", "dev"]
 
 FROM base AS production
 
-RUN npm ci --only=production
+RUN npm install
 
 COPY . .
 

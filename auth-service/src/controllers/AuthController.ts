@@ -43,7 +43,7 @@ export class AuthController {
         path: '/',
       });
 
-      await logInfo('Utilisateur inscrit avec succès', { userId: user.id, email: user.email });
+      await logInfo('Utilisateur inscrit avec succès', { userId: user.id, email: user.email ?? 'non défini' });
 
       res.status(201).json({
         message: 'User registered successfully',
@@ -80,7 +80,7 @@ export class AuthController {
       };
 
       if (requires2FA && tempToken) {
-        await logInfo('Connexion réussie - 2FA requis', { userId: user.id, email: user.email });
+        await logInfo('Connexion réussie - 2FA requis', { userId: user.id, email: user.email ?? 'non défini' });
         res.status(200).json({
           message: 'Two-factor authentication required',
           requires2FA: true,
@@ -98,7 +98,7 @@ export class AuthController {
         path: '/',
       });
 
-      await logInfo('Connexion réussie', { userId: user.id, email: user.email });
+      await logInfo('Connexion réussie', { userId: user.id, email: user.email ?? 'non défini' });
 
       res.status(200).json({
         message: 'Login successful',
@@ -166,7 +166,7 @@ export class AuthController {
 
       await this.authService.updatePassword(userId, oldPassword, newPassword);
 
-      await logInfo('Mot de passe mis à jour', { userId });
+      await logInfo('Mot de passe mis à jour', { userId: userId ?? 'inconnu' });
 
       res.status(200).json({ message: 'Password updated successfully' });
     } catch (error) {
@@ -183,7 +183,7 @@ export class AuthController {
 
       res.clearCookie('token', { path: '/' });
 
-      await logInfo('Compte supprimé', { userId });
+      await logInfo('Compte supprimé', { userId: userId ?? 'inconnu' });
 
       res.status(200).json({ message: 'Account deleted successfully' });
     } catch (error) {
