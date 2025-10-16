@@ -9,3 +9,13 @@ services:
       - CI=true
     profiles:
       - test
+  auth-service-tests:
+    build:
+      context: ./auth-service
+      target: development
+    working_dir: /app
+    command: npm test
+    environment:
+      - CI=true
+    profiles:
+      - test
