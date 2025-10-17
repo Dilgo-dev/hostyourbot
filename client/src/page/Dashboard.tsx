@@ -43,8 +43,8 @@ export default function Dashboard() {
         botService.getBots(),
         builderService.getWorkflows(user!.id)
       ]);
-      setBots(botsData);
-      setWorkflows(workflowsData);
+      setBots(botsData || []);
+      setWorkflows(workflowsData || []);
     } catch (error) {
       console.error('Erreur lors du chargement des données:', error);
     } finally {
