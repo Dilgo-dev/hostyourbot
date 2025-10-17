@@ -75,6 +75,12 @@ const connectWithRetry = async (retries = 10, delay = 5000): Promise<void> => {
       return;
     } catch (error) {
       console.error(`Database connection attempt ${i + 1}/${retries} failed:`, error);
+
+      if (AppDataSource.isInitialized) {
+        await AppDataSource.destroy();
+        console.log('Database connection destroyed for retry');
+      }
+
       if (i < retries - 1) {
         console.log(`Retrying in ${delay / 1000} seconds...`);
         await new Promise(resolve => setTimeout(resolve, delay));
