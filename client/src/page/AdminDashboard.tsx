@@ -63,8 +63,8 @@ export default function AdminDashboard() {
 
       setUserStats(userStatsData);
       setBotStats(botStatsData);
-      setRecentUsers(usersData.users);
-      setRecentBots(botsData.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+      setRecentUsers(usersData.users || []);
+      setRecentBots((botsData || []).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
     } catch (err: any) {
       console.error('Error loading dashboard data:', err);
       setError(err.response?.data?.error || 'Erreur lors du chargement des données');

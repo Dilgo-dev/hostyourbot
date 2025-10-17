@@ -108,12 +108,12 @@ export const adminService = {
 
   async getBots(): Promise<AdminBot[]> {
     const response = await k8sApi.get<{ bots: AdminBot[] }>('/api/v1/admin/bots');
-    return response.data.bots;
+    return response.data.bots || [];
   },
 
   async getBotStats(): Promise<BotStatsResponse> {
     const response = await k8sApi.get<BotStatsResponse>('/api/v1/admin/bots/stats');
-    return response.data;
+    return response.data || { total: 0, running: 0, stopped: 0, error: 0 };
   },
 
   async startBot(id: string): Promise<{ bot: AdminBot }> {
