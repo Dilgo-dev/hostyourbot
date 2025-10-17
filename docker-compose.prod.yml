@@ -1,0 +1,140 @@
+services:
+  postgres-auth:
+    image: postgres:16-alpine
+    container_name: hostyourbot-postgres-auth-prod
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USERNAME}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - postgres-auth-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  auth-service:
+    image: docker.hostyourbot.app/hostyourbot/auth-service:${IMAGE_TAG:-latest}
+    build:
+      context: ./auth-service
+      target: production
+    container_name: hostyourbot-auth-service-prod
+    expose:
+      - "3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - DB_HOST=postgres-auth
+      - DB_PORT=5432
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - JWT_SECRET=${JWT_SECRET}
+      - LOGS_GRPC_URL=logs-service:50052
+      - MAIL_GRPC_URL=mail-service:50053
+    depends_on:
+      - postgres-auth
+    restart: unless-stopped
+
+  logs-service:
+    image: docker.hostyourbot.app/hostyourbot/logs-service:${IMAGE_TAG:-latest}
+    build:
+      context: ./logs-service
+      target: production
+    container_name: hostyourbot-logs-service-prod
+    expose:
+      - "3002"
+      - "50052"
+    volumes:
+      - logs-data:/root/data
+    environment:
+      - ENVIRONMENT=production
+      - PORT=3002
+      - GRPC_PORT=50052
+      - DATABASE_PATH=/root/data/logs.db
+    restart: unless-stopped
+
+  k8s-service:
+    image: docker.hostyourbot.app/hostyourbot/k8s-service:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: k8s-service/Dockerfile
+      target: production
+    container_name: hostyourbot-k8s-service-prod
+    expose:
+      - "3003"
+      - "50054"
+    environment:
+      - NODE_ENV=production
+      - ENVIRONMENT=production
+      - PORT=3003
+      - GRPC_PORT=50054
+      - K8S_API_URL=${K8S_API_URL}
+      - K8S_API_TOKEN=${K8S_API_TOKEN}
+    restart: unless-stopped
+
+  mail-service:
+    image: docker.hostyourbot.app/hostyourbot/mail-service:${IMAGE_TAG:-latest}
+    build:
+      context: ./mail-service
+      target: production
+    container_name: hostyourbot-mail-service-prod
+    expose:
+      - "50053"
+    environment:
+      - ENVIRONMENT=production
+      - GRPC_PORT=50053
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_SECURE=${SMTP_SECURE}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - SMTP_FROM=${SMTP_FROM}
+    restart: unless-stopped
+
+  client:
+    image: docker.hostyourbot.app/hostyourbot/client:${IMAGE_TAG:-latest}
+    build:
+      context: ./client
+      target: production
+    container_name: hostyourbot-client-prod
+    expose:
+      - "80"
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+
+  webhook-service:
+    image: docker.hostyourbot.app/hostyourbot/webhook-service:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: webhook-service/Dockerfile
+      target: production
+    container_name: hostyourbot-webhook-service-prod
+    environment:
+      - WEBHOOK_ENVIRONMENT=production
+      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
+      - K8S_GRPC_URL=k8s-service:50054
+      - STATS_CRON=${STATS_CRON}
+      - CHECK_INTERVAL=${CHECK_INTERVAL}
+      - CAPACITY_WARNING_THRESHOLD=${CAPACITY_WARNING_THRESHOLD}
+      - CAPACITY_CRITICAL_THRESHOLD=${CAPACITY_CRITICAL_THRESHOLD}
+      - PODS_WARNING_THRESHOLD=${PODS_WARNING_THRESHOLD}
+    depends_on:
+      - k8s-service
+    restart: unless-stopped
+
+  gateway:
+    image: nginx:1.27-alpine
+    container_name: hostyourbot-gateway-prod
+    depends_on:
+      - client
+      - auth-service
+      - logs-service
+      - k8s-service
+    volumes:
+      - ./nginx/gateway.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "5176:80"
+    restart: unless-stopped
+
+volumes:
+  postgres-auth-data:
+  logs-data:

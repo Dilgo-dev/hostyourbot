@@ -1,6 +1,26 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
+import { SubscriptionProvider } from "./context/SubscriptionContext";
 import Layout from "./component/Layout";
 import Home from "./page/Home";
+import Register from "./page/Register";
+import Login from "./page/Login";
+import ForgotPassword from "./page/ForgotPassword";
+import ResetPassword from "./page/ResetPassword";
+import Dashboard from "./page/Dashboard";
+import CreateBotMethod from "./page/CreateBotMethod";
+import CreateBot from "./page/CreateBot";
+import BotDetail from "./page/BotDetail";
+import AccountSettings from "./page/AccountSettings";
+import AdminDashboard from "./page/AdminDashboard";
+import AdminUsers from "./page/admin/AdminUsers";
+import AdminBots from "./page/admin/AdminBots";
+import AdminSystem from "./page/admin/AdminSystem";
+import AdminLogs from "./page/admin/AdminLogs";
+import AdminConfig from "./page/admin/AdminConfig";
+import Builder from "./page/Builder";
+import Pricing from "./page/Pricing";
+import NotFound from "./page/NotFound";
 
 const router = createBrowserRouter([
   {
@@ -11,10 +31,88 @@ const router = createBrowserRouter([
         index: true,
         element: <Home />,
       },
+      {
+        path: "register",
+        element: <Register />,
+      },
+      {
+        path: "login",
+        element: <Login />,
+      },
+      {
+        path: "forgot-password",
+        element: <ForgotPassword />,
+      },
+      {
+        path: "reset-password",
+        element: <ResetPassword />,
+      },
+      {
+        path: "pricing",
+        element: <Pricing />,
+      },
+      {
+        path: "*",
+        element: <NotFound />,
+      },
     ],
+  },
+  {
+    path: "/dashboard",
+    element: <Dashboard />,
+  },
+  {
+    path: "/dashboard/create/method",
+    element: <CreateBotMethod />,
+  },
+  {
+    path: "/dashboard/create",
+    element: <CreateBot />,
+  },
+  {
+    path: "/dashboard/bots/:id",
+    element: <BotDetail />,
+  },
+  {
+    path: "/dashboard/settings",
+    element: <AccountSettings />,
+  },
+  {
+    path: "/dashboard/admin",
+    element: <AdminDashboard />,
+  },
+  {
+    path: "/dashboard/admin/users",
+    element: <AdminUsers />,
+  },
+  {
+    path: "/dashboard/admin/bots",
+    element: <AdminBots />,
+  },
+  {
+    path: "/dashboard/admin/system",
+    element: <AdminSystem />,
+  },
+  {
+    path: "/dashboard/admin/logs",
+    element: <AdminLogs />,
+  },
+  {
+    path: "/dashboard/admin/config",
+    element: <AdminConfig />,
+  },
+  {
+    path: "/builder",
+    element: <Builder />,
   },
 ]);
 
-const App = () => <RouterProvider router={router} />;
+const App = () => (
+  <AuthProvider>
+    <SubscriptionProvider>
+      <RouterProvider router={router} />
+    </SubscriptionProvider>
+  </AuthProvider>
+);
 
 export default App;

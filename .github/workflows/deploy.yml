@@ -1,0 +1,54 @@
+name: Deploy
+on:
+  push:
+    branches:
+      - main
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    env:
+      REGISTRY: docker.hostyourbot.app
+      REGISTRY_USERNAME: admin
+      IMAGE_TAG: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ env.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+      - name: Build images
+        run: |
+          export IMAGE_TAG=${IMAGE_TAG}
+          docker compose -f docker-compose.prod.yml build
+      - name: Push images
+        run: |
+          export IMAGE_TAG=${IMAGE_TAG}
+          docker compose -f docker-compose.prod.yml push
+      - name: Tag latest
+        run: |
+          services="auth-service logs-service k8s-service mail-service client webhook-service"
+          for service in $services; do
+            docker tag ${REGISTRY}/hostyourbot/${service}:${IMAGE_TAG} ${REGISTRY}/hostyourbot/${service}:latest
+            docker push ${REGISTRY}/hostyourbot/${service}:latest
+          done
+      - uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      - name: Add known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+      - name: Deploy
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          ssh $SSH_USER@$SSH_HOST "docker login ${REGISTRY} -u ${REGISTRY_USERNAME} -p ${REGISTRY_PASSWORD}"
+          ssh $SSH_USER@$SSH_HOST "cd ${DEPLOY_PATH} && git fetch origin && git checkout main && git pull origin main"
+          ssh $SSH_USER@$SSH_HOST "cd ${DEPLOY_PATH} && IMAGE_TAG=${IMAGE_TAG} docker compose -f docker-compose.prod.yml pull"
+          ssh $SSH_USER@$SSH_HOST "cd ${DEPLOY_PATH} && IMAGE_TAG=${IMAGE_TAG} docker compose -f docker-compose.prod.yml up -d --remove-orphans"

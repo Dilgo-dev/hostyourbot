@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package logs;
+
+option go_package = "github.com/hostyourbot/logs-service/pkg/proto";
+
+service LogsService {
+  rpc CreateLog(CreateLogRequest) returns (CreateLogResponse);
+  rpc GetLogs(GetLogsRequest) returns (GetLogsResponse);
+  rpc GetLog(GetLogRequest) returns (LogResponse);
+  rpc DeleteLog(DeleteLogRequest) returns (DeleteLogResponse);
+}
+
+message CreateLogRequest {
+  string service_name = 1;
+  string level = 2;
+  string message = 3;
+  map<string, string> metadata = 4;
+}
+
+message CreateLogResponse {
+  uint32 id = 1;
+  string service_name = 2;
+  string level = 3;
+  string message = 4;
+  map<string, string> metadata = 5;
+  string created_at = 6;
+}
+
+message GetLogsRequest {
+  string service_name = 1;
+  string level = 2;
+  int32 limit = 3;
+  int32 offset = 4;
+}
+
+message GetLogsResponse {
+  repeated LogResponse logs = 1;
+  int64 total = 2;
+}
+
+message GetLogRequest {
+  uint32 id = 1;
+}
+
+message LogResponse {
+  uint32 id = 1;
+  string service_name = 2;
+  string level = 3;
+  string message = 4;
+  map<string, string> metadata = 5;
+  string created_at = 6;
+}
+
+message DeleteLogRequest {
+  uint32 id = 1;
+}
+
+message DeleteLogResponse {
+  string message = 1;
+}

@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package k8s;
+
+option go_package = "github.com/hostyourbot/k8s-service/pkg/proto";
+
+service K8sMetricsService {
+  rpc GetClusterMetrics(ClusterMetricsRequest) returns (ClusterMetricsResponse);
+  rpc GetNodesStatus(NodesStatusRequest) returns (NodesStatusResponse);
+  rpc GetPodsCount(PodsCountRequest) returns (PodsCountResponse);
+}
+
+message ClusterMetricsRequest {}
+
+message ClusterMetricsResponse {
+  int32 total_nodes = 1;
+  int32 ready_nodes = 2;
+  int32 total_pods = 3;
+  int32 running_pods = 4;
+  int32 pending_pods = 5;
+  int32 failed_pods = 6;
+  float cpu_usage_percent = 7;
+  float memory_usage_percent = 8;
+  int32 max_pods_capacity = 9;
+  int32 available_pods_capacity = 10;
+}
+
+message NodesStatusRequest {}
+
+message NodeInfo {
+  string name = 1;
+  string role = 2;
+  string status = 3;
+  float cpu_usage_percent = 4;
+  float memory_usage_percent = 5;
+  int32 pods_count = 6;
+  int32 max_pods = 7;
+  bool is_master = 8;
+}
+
+message NodesStatusResponse {
+  repeated NodeInfo nodes = 1;
+}
+
+message PodsCountRequest {
+  string namespace = 1;
+}
+
+message PodsCountResponse {
+  int32 total = 1;
+  int32 running = 2;
+  int32 pending = 3;
+  int32 failed = 4;
+  int32 succeeded = 5;
+}

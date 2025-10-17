@@ -1,0 +1,31 @@
+services:
+  client-tests:
+    build:
+      context: ./client
+      target: development
+    working_dir: /app
+    command: npm run test -- --run
+    environment:
+      - CI=true
+    profiles:
+      - test
+  auth-service-tests:
+    build:
+      context: ./auth-service
+      target: development
+    working_dir: /app
+    command: npm test
+    environment:
+      - CI=true
+    profiles:
+      - test
+  mail-service-tests:
+    build:
+      context: ./mail-service
+      target: development
+    working_dir: /app
+    command: npm test
+    environment:
+      - CI=true
+    profiles:
+      - test
