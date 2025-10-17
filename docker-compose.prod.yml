@@ -36,6 +36,7 @@ services:
       - DISCORD_CLIENT_SECRET=${DISCORD_CLIENT_SECRET}
       - DISCORD_CALLBACK_URL=${DISCORD_CALLBACK_URL}
       - CLIENT_URL=${CLIENT_URL}
+      - FRONTEND_URL=${FRONTEND_URL}
       - LOGS_GRPC_URL=logs-service:50052
       - MAIL_GRPC_URL=mail-service:50053
     depends_on:
