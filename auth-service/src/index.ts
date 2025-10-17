@@ -13,6 +13,7 @@ import subscriptionRoutes from './routes/subscriptionRoutes';
 import { initLogsGrpcClient } from './grpc/logsGrpcClient';
 import { initMailGrpcClient } from './grpc/mailGrpcClient';
 import passport from './config/passport';
+import { seedSubscriptionPlans } from './scripts/seedPlans';
 
 dotenv.config();
 
@@ -65,6 +66,9 @@ const connectWithRetry = async (retries = 10, delay = 5000): Promise<void> => {
 
       await AppDataSource.runMigrations();
       console.log('Migrations executed successfully');
+
+      await seedSubscriptionPlans(AppDataSource);
+      console.log('Subscription plans seeded successfully');
 
       initLogsGrpcClient();
       initMailGrpcClient();
