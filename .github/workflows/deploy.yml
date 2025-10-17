@@ -4,89 +4,9 @@ on:
     branches:
       - main
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
-    env:
-      REGISTRY: docker.hostyourbot.app
-      REGISTRY_USERNAME: admin
-      IMAGE_TAG: ${{ github.sha }}
     steps:
-      - uses: actions/checkout@v4
-      - name: Charger l'environnement
-        run: |
-          printf "%s\n" "${{ secrets.PROD_ENV_FILE }}" > .env.production
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ env.REGISTRY_USERNAME }}
-          password: ${{ secrets.REGISTRY_PASSWORD }}
-      - name: Build and push auth-service
-        uses: docker/build-push-action@v5
-        with:
-          context: ./auth-service
-          file: ./auth-service/Dockerfile
-          target: production
-          push: true
-          tags: ${{ env.REGISTRY }}/hostyourbot/auth-service:${{ env.IMAGE_TAG }}
-          build-args: SERVICE_PATH=auth-service
-
-      - name: Build and push logs-service
-        uses: docker/build-push-action@v5
-        with:
-          context: ./logs-service
-          file: ./logs-service/Dockerfile
-          target: production
-          push: true
-          tags: ${{ env.REGISTRY }}/hostyourbot/logs-service:${{ env.IMAGE_TAG }}
-          build-args: SERVICE_PATH=logs-service
-
-      - name: Build and push k8s-service
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./k8s-service/Dockerfile
-          target: production
-          push: true
-          tags: ${{ env.REGISTRY }}/hostyourbot/k8s-service:${{ env.IMAGE_TAG }}
-          build-args: SERVICE_PATH=k8s-service
-
-      - name: Build and push mail-service
-        uses: docker/build-push-action@v5
-        with:
-          context: ./mail-service
-          file: ./mail-service/Dockerfile
-          target: production
-          push: true
-          tags: ${{ env.REGISTRY }}/hostyourbot/mail-service:${{ env.IMAGE_TAG }}
-          build-args: SERVICE_PATH=mail-service
-
-      - name: Build and push client
-        uses: docker/build-push-action@v5
-        with:
-          context: ./client
-          file: ./client/Dockerfile
-          target: production
-          push: true
-          tags: ${{ env.REGISTRY }}/hostyourbot/client:${{ env.IMAGE_TAG }}
-
-      - name: Build and push webhook-service
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./webhook-service/Dockerfile
-          target: production
-          push: true
-          tags: ${{ env.REGISTRY }}/hostyourbot/webhook-service:${{ env.IMAGE_TAG }}
-          build-args: SERVICE_PATH=webhook-service
-      - name: Tag latest
-        run: |
-          services="auth-service logs-service k8s-service mail-service client webhook-service"
-          for service in $services; do
-            docker buildx imagetools create \
-              ${REGISTRY}/hostyourbot/${service}:${IMAGE_TAG} \
-              --tag ${REGISTRY}/hostyourbot/${service}:latest
-          done
       - uses: webfactory/ssh-agent@v0.8.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
@@ -94,15 +14,13 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
-      - name: Deploy
+      - name: Deploy sur VPS
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_HOST: ${{ secrets.SSH_HOST }}
-          REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
-          IMAGE_TAG: ${{ github.sha }}
+          PROD_ENV_FILE: ${{ secrets.PROD_ENV_FILE }}
         run: |
-          ssh $SSH_USER@$SSH_HOST "docker login ${REGISTRY} -u ${REGISTRY_USERNAME} -p ${REGISTRY_PASSWORD}"
           ssh $SSH_USER@$SSH_HOST "cd ${DEPLOY_PATH} && git fetch origin && git checkout main && git pull origin main"
-          ssh $SSH_USER@$SSH_HOST "cd ${DEPLOY_PATH} && IMAGE_TAG=${IMAGE_TAG} docker compose -f docker-compose.prod.yml pull"
-          ssh $SSH_USER@$SSH_HOST "cd ${DEPLOY_PATH} && IMAGE_TAG=${IMAGE_TAG} docker compose -f docker-compose.prod.yml up -d --remove-orphans"
+          ssh $SSH_USER@$SSH_HOST "cd ${DEPLOY_PATH} && docker compose -f docker-compose.prod.yml build"
+          ssh $SSH_USER@$SSH_HOST "cd ${DEPLOY_PATH} && docker compose -f docker-compose.prod.yml up -d --remove-orphans"
