@@ -8,6 +8,11 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
     volumes:
       - postgres-auth-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     restart: unless-stopped
 
   auth-service:
@@ -29,7 +34,8 @@ services:
       - LOGS_GRPC_URL=logs-service:50052
       - MAIL_GRPC_URL=mail-service:50053
     depends_on:
-      - postgres-auth
+      postgres-auth:
+        condition: service_healthy
     restart: unless-stopped
 
   logs-service:
