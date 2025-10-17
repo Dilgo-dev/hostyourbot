@@ -63,6 +63,9 @@ const connectWithRetry = async (retries = 10, delay = 5000): Promise<void> => {
       await AppDataSource.initialize();
       console.log('Database connected successfully');
 
+      await AppDataSource.runMigrations();
+      console.log('Migrations executed successfully');
+
       initLogsGrpcClient();
       initMailGrpcClient();
 
