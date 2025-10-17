@@ -21,56 +21,64 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ env.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
-      - name: Build and push images
-        env:
-          IMAGE_TAG: ${{ env.IMAGE_TAG }}
-        run: |
-          docker buildx build --platform linux/amd64 \
-            --build-arg SERVICE_PATH=auth-service \
-            --target production \
-            -t ${REGISTRY}/hostyourbot/auth-service:${IMAGE_TAG} \
-            -f auth-service/Dockerfile \
-            --push \
-            ./auth-service
+      - name: Build and push auth-service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./auth-service
+          file: ./auth-service/Dockerfile
+          target: production
+          push: true
+          tags: ${{ env.REGISTRY }}/hostyourbot/auth-service:${{ env.IMAGE_TAG }}
+          build-args: SERVICE_PATH=auth-service
 
-          docker buildx build --platform linux/amd64 \
-            --build-arg SERVICE_PATH=logs-service \
-            --target production \
-            -t ${REGISTRY}/hostyourbot/logs-service:${IMAGE_TAG} \
-            -f logs-service/Dockerfile \
-            --push \
-            ./logs-service
+      - name: Build and push logs-service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./logs-service
+          file: ./logs-service/Dockerfile
+          target: production
+          push: true
+          tags: ${{ env.REGISTRY }}/hostyourbot/logs-service:${{ env.IMAGE_TAG }}
+          build-args: SERVICE_PATH=logs-service
 
-          docker buildx build --platform linux/amd64 \
-            --build-arg SERVICE_PATH=k8s-service \
-            --target production \
-            -t ${REGISTRY}/hostyourbot/k8s-service:${IMAGE_TAG} \
-            -f k8s-service/Dockerfile \
-            --push \
-            .
+      - name: Build and push k8s-service
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./k8s-service/Dockerfile
+          target: production
+          push: true
+          tags: ${{ env.REGISTRY }}/hostyourbot/k8s-service:${{ env.IMAGE_TAG }}
+          build-args: SERVICE_PATH=k8s-service
 
-          docker buildx build --platform linux/amd64 \
-            --build-arg SERVICE_PATH=mail-service \
-            --target production \
-            -t ${REGISTRY}/hostyourbot/mail-service:${IMAGE_TAG} \
-            -f mail-service/Dockerfile \
-            --push \
-            ./mail-service
+      - name: Build and push mail-service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./mail-service
+          file: ./mail-service/Dockerfile
+          target: production
+          push: true
+          tags: ${{ env.REGISTRY }}/hostyourbot/mail-service:${{ env.IMAGE_TAG }}
+          build-args: SERVICE_PATH=mail-service
 
-          docker buildx build --platform linux/amd64 \
-            --target production \
-            -t ${REGISTRY}/hostyourbot/client:${IMAGE_TAG} \
-            -f client/Dockerfile \
-            --push \
-            ./client
+      - name: Build and push client
+        uses: docker/build-push-action@v5
+        with:
+          context: ./client
+          file: ./client/Dockerfile
+          target: production
+          push: true
+          tags: ${{ env.REGISTRY }}/hostyourbot/client:${{ env.IMAGE_TAG }}
 
-          docker buildx build --platform linux/amd64 \
-            --build-arg SERVICE_PATH=webhook-service \
-            --target production \
-            -t ${REGISTRY}/hostyourbot/webhook-service:${IMAGE_TAG} \
-            -f webhook-service/Dockerfile \
-            --push \
-            .
+      - name: Build and push webhook-service
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./webhook-service/Dockerfile
+          target: production
+          push: true
+          tags: ${{ env.REGISTRY }}/hostyourbot/webhook-service:${{ env.IMAGE_TAG }}
+          build-args: SERVICE_PATH=webhook-service
       - name: Tag latest
         run: |
           services="auth-service logs-service k8s-service mail-service client webhook-service"
