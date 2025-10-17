@@ -21,20 +21,63 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ env.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
-      - name: Build images
+      - name: Build and push images
         env:
           IMAGE_TAG: ${{ env.IMAGE_TAG }}
-        run: docker compose --env-file .env.production -f docker-compose.prod.yml build
-      - name: Push images
-        env:
-          IMAGE_TAG: ${{ env.IMAGE_TAG }}
-        run: docker compose --env-file .env.production -f docker-compose.prod.yml push
+        run: |
+          docker buildx build --platform linux/amd64 \
+            --build-arg SERVICE_PATH=auth-service \
+            --target production \
+            -t ${REGISTRY}/hostyourbot/auth-service:${IMAGE_TAG} \
+            -f auth-service/Dockerfile \
+            --push \
+            ./auth-service
+
+          docker buildx build --platform linux/amd64 \
+            --build-arg SERVICE_PATH=logs-service \
+            --target production \
+            -t ${REGISTRY}/hostyourbot/logs-service:${IMAGE_TAG} \
+            -f logs-service/Dockerfile \
+            --push \
+            ./logs-service
+
+          docker buildx build --platform linux/amd64 \
+            --build-arg SERVICE_PATH=k8s-service \
+            --target production \
+            -t ${REGISTRY}/hostyourbot/k8s-service:${IMAGE_TAG} \
+            -f k8s-service/Dockerfile \
+            --push \
+            .
+
+          docker buildx build --platform linux/amd64 \
+            --build-arg SERVICE_PATH=mail-service \
+            --target production \
+            -t ${REGISTRY}/hostyourbot/mail-service:${IMAGE_TAG} \
+            -f mail-service/Dockerfile \
+            --push \
+            ./mail-service
+
+          docker buildx build --platform linux/amd64 \
+            --target production \
+            -t ${REGISTRY}/hostyourbot/client:${IMAGE_TAG} \
+            -f client/Dockerfile \
+            --push \
+            ./client
+
+          docker buildx build --platform linux/amd64 \
+            --build-arg SERVICE_PATH=webhook-service \
+            --target production \
+            -t ${REGISTRY}/hostyourbot/webhook-service:${IMAGE_TAG} \
+            -f webhook-service/Dockerfile \
+            --push \
+            .
       - name: Tag latest
         run: |
           services="auth-service logs-service k8s-service mail-service client webhook-service"
           for service in $services; do
-            docker tag ${REGISTRY}/hostyourbot/${service}:${IMAGE_TAG} ${REGISTRY}/hostyourbot/${service}:latest
-            docker push ${REGISTRY}/hostyourbot/${service}:latest
+            docker buildx imagetools create \
+              ${REGISTRY}/hostyourbot/${service}:${IMAGE_TAG} \
+              --tag ${REGISTRY}/hostyourbot/${service}:latest
           done
       - uses: webfactory/ssh-agent@v0.8.0
         with:
