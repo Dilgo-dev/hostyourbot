@@ -102,7 +102,7 @@ export const botService = {
     const response = await k8sApi.get<{ bots: Bot[] }>('/api/v1/bots', {
       params: { userId },
     });
-    return response.data.bots;
+    return response.data.bots || [];
   },
 
   async getBot(id: string): Promise<Bot> {
