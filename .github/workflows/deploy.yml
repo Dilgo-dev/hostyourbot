@@ -10,10 +10,9 @@ jobs:
       REGISTRY: docker.hostyourbot.app
       REGISTRY_USERNAME: admin
       IMAGE_TAG: ${{ github.sha }}
-      BUILDKIT_REGISTRY_COMPRESSION: gzip
     steps:
       - uses: actions/checkout@v4
-      - name: Charger l’environnement
+      - name: Charger l'environnement
         run: |
           printf "%s\n" "${{ secrets.PROD_ENV_FILE }}" > .env.production
       - uses: docker/setup-buildx-action@v3
@@ -25,12 +24,10 @@ jobs:
       - name: Build images
         env:
           IMAGE_TAG: ${{ env.IMAGE_TAG }}
-          DOCKER_BUILDKIT: "0"
         run: docker compose --env-file .env.production -f docker-compose.prod.yml build
       - name: Push images
         env:
           IMAGE_TAG: ${{ env.IMAGE_TAG }}
-          DOCKER_BUILDKIT: "0"
         run: docker compose --env-file .env.production -f docker-compose.prod.yml push
       - name: Tag latest
         run: |
