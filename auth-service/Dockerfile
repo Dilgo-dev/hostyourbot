@@ -20,7 +20,7 @@ FROM base AS production
 
 RUN apk add --no-cache python3 make g++ libc6-compat
 
-RUN npm ci --only=production
+RUN npm install
 
 RUN apk del python3 make g++
 

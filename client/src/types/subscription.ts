@@ -1,8 +1,10 @@
-export enum PlanName {
-  FREE = 'free',
-  PREMIUM = 'premium',
-  ENTERPRISE = 'enterprise',
-}
+export const PLAN_NAME = {
+  FREE: 'free',
+  PREMIUM: 'premium',
+  ENTERPRISE: 'enterprise',
+} as const;
+
+export type PlanName = (typeof PLAN_NAME)[keyof typeof PLAN_NAME];
 
 export interface PlanFeatures {
   maxBots: number;

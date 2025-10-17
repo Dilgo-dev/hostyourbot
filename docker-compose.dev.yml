@@ -98,7 +98,8 @@ services:
 
   k8s-service:
     build:
-      context: ./k8s-service
+      context: .
+      dockerfile: k8s-service/Dockerfile
       target: development
     container_name: hostyourbot-k8s-service-dev
     ports:
@@ -157,7 +158,8 @@ services:
 
   webhook-service:
     build:
-      context: ./webhook-service
+      context: .
+      dockerfile: webhook-service/Dockerfile
       target: development
     container_name: hostyourbot-webhook-service-dev
     volumes:
@@ -185,10 +187,11 @@ services:
     volumes:
       - mongodb-data:/data/db
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test: ["CMD-SHELL", "mongosh --quiet --eval \"db.adminCommand({ ping: 1 }).ok\""]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s
     restart: unless-stopped
 
   builder-service:

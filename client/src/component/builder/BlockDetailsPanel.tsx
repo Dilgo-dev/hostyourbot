@@ -1,7 +1,7 @@
 import { FaTimes, FaTrash } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Node } from '@xyflow/react';
-import type { NodeData, NodeConfig } from './CustomNode';
+import type { NodeData, NodeConfig } from '../../services/builderService';
 
 interface BlockDetailsPanelProps {
   node: Node<NodeData> | null;

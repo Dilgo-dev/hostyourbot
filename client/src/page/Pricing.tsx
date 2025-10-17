@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { FaCheck, FaTimes } from 'react-icons/fa';
 import { getAvailablePlans } from '../services/subscriptionService';
-import type { SubscriptionPlan, PlanName } from '../types/subscription';
+import { PLAN_NAME, type SubscriptionPlan, type PlanName } from '../types/subscription';
 import { useSubscription } from '../context/SubscriptionContext';
 
 export default function Pricing() {
@@ -27,11 +27,11 @@ export default function Pricing() {
 
   const getPlanColor = (planName: PlanName) => {
     switch (planName) {
-      case PlanName.FREE:
+      case PLAN_NAME.FREE:
         return 'slate';
-      case PlanName.PREMIUM:
+      case PLAN_NAME.PREMIUM:
         return 'purple';
-      case PlanName.ENTERPRISE:
+      case PLAN_NAME.ENTERPRISE:
         return 'indigo';
       default:
         return 'slate';
@@ -69,7 +69,7 @@ export default function Pricing() {
           {plans.map((plan, index) => {
             const color = getPlanColor(plan.name);
             const isCurrent = isCurrentPlan(plan.name);
-            const isPremium = plan.name === PlanName.PREMIUM;
+            const isPremium = plan.name === PLAN_NAME.PREMIUM;
 
             return (
               <motion.div

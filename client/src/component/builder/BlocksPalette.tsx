@@ -1,4 +1,4 @@
-import { FaBolt, FaPaperPlane, FaUserPlus, FaHashtag, FaFilter, FaUserShield, FaCheck } from 'react-icons/fa';
+import { FaBolt, FaPaperPlane, FaUserPlus, FaHashtag, FaFilter, FaCheck } from 'react-icons/fa';
 
 type BlockCategory = 'events' | 'actions' | 'conditions';
 

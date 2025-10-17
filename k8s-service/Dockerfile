@@ -2,13 +2,18 @@ FROM node:20-alpine AS base
 
 WORKDIR /app
 
-COPY package*.json ./
+ARG SERVICE_PATH="k8s-service"
+
+COPY ${SERVICE_PATH}/package*.json ./
 
 FROM base AS development
 
+ARG SERVICE_PATH="k8s-service"
+
 RUN npm install
 
-COPY . .
+COPY ${SERVICE_PATH}/ ./
+COPY proto ./proto
 
 EXPOSE 3003
 
@@ -16,9 +21,12 @@ CMD ["npm", "run", "dev"]
 
 FROM base AS production
 
-RUN npm ci --only=production
+ARG SERVICE_PATH="k8s-service"
 
-COPY . .
+RUN npm install
+
+COPY ${SERVICE_PATH}/ ./
+COPY proto ./proto
 
 RUN npm run build
 

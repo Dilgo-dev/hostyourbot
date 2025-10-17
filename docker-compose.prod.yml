@@ -11,12 +11,13 @@ services:
     restart: unless-stopped
 
   auth-service:
+    image: docker.hostyourbot.app/hostyourbot/auth-service:${IMAGE_TAG:-latest}
     build:
       context: ./auth-service
       target: production
     container_name: hostyourbot-auth-service-prod
-    ports:
-      - "3001:3001"
+    expose:
+      - "3001"
     environment:
       - NODE_ENV=production
       - PORT=3001
@@ -33,13 +34,14 @@ services:
     restart: unless-stopped
 
   logs-service:
+    image: docker.hostyourbot.app/hostyourbot/logs-service:${IMAGE_TAG:-latest}
     build:
       context: ./logs-service
       target: production
     container_name: hostyourbot-logs-service-prod
-    ports:
-      - "3002:3002"
-      - "50052:50052"
+    expose:
+      - "3002"
+      - "50052"
     volumes:
       - logs-data:/root/data
     environment:
@@ -50,13 +52,15 @@ services:
     restart: unless-stopped
 
   k8s-service:
+    image: docker.hostyourbot.app/hostyourbot/k8s-service:${IMAGE_TAG:-latest}
     build:
-      context: ./k8s-service
+      context: .
+      dockerfile: k8s-service/Dockerfile
       target: production
     container_name: hostyourbot-k8s-service-prod
-    ports:
-      - "3003:3003"
-      - "50054:50054"
+    expose:
+      - "3003"
+      - "50054"
     environment:
       - NODE_ENV=production
       - ENVIRONMENT=production
@@ -67,12 +71,13 @@ services:
     restart: unless-stopped
 
   mail-service:
+    image: docker.hostyourbot.app/hostyourbot/mail-service:${IMAGE_TAG:-latest}
     build:
       context: ./mail-service
       target: production
     container_name: hostyourbot-mail-service-prod
-    ports:
-      - "50053:50053"
+    expose:
+      - "50053"
     environment:
       - ENVIRONMENT=production
       - GRPC_PORT=50053
@@ -85,19 +90,22 @@ services:
     restart: unless-stopped
 
   client:
+    image: docker.hostyourbot.app/hostyourbot/client:${IMAGE_TAG:-latest}
     build:
       context: ./client
       target: production
     container_name: hostyourbot-client-prod
-    ports:
-      - "80:80"
+    expose:
+      - "80"
     environment:
       - NODE_ENV=production
     restart: unless-stopped
 
   webhook-service:
+    image: docker.hostyourbot.app/hostyourbot/webhook-service:${IMAGE_TAG:-latest}
     build:
-      context: ./webhook-service
+      context: .
+      dockerfile: webhook-service/Dockerfile
       target: production
     container_name: hostyourbot-webhook-service-prod
     environment:
@@ -111,6 +119,20 @@ services:
       - PODS_WARNING_THRESHOLD=${PODS_WARNING_THRESHOLD}
     depends_on:
       - k8s-service
+    restart: unless-stopped
+
+  gateway:
+    image: nginx:1.27-alpine
+    container_name: hostyourbot-gateway-prod
+    depends_on:
+      - client
+      - auth-service
+      - logs-service
+      - k8s-service
+    volumes:
+      - ./nginx/gateway.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "5176:80"
     restart: unless-stopped
 
 volumes:

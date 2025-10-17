@@ -12,6 +12,10 @@ interface CreateBotModalProps {
 export default function CreateBotModal({ isOpen, onClose, onCreate }: CreateBotModalProps) {
   const [formData, setFormData] = useState<CreateBotRequest>({
     name: '',
+    language: 'nodejs',
+    version: 'LTS',
+    zipFile: null,
+    envVars: [],
     type: 'discord',
     token: '',
     replicas: 1,
@@ -30,6 +34,10 @@ export default function CreateBotModal({ isOpen, onClose, onCreate }: CreateBotM
       await onCreate(formData);
       setFormData({
         name: '',
+        language: 'nodejs',
+        version: 'LTS',
+        zipFile: null,
+        envVars: [],
         type: 'discord',
         token: '',
         replicas: 1,
