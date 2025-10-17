@@ -51,7 +51,7 @@ app.use(passport.session());
 
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/subscription', subscriptionRoutes);
+app.use('/api/auth/subscription', subscriptionRoutes);
 
 app.get('/health', (req: Request, res: Response) => {
   res.status(200).json({ status: 'ok', service: 'auth-service' });
