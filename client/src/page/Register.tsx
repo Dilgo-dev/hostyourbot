@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaDiscord } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
+import { resolveAuthUrl } from '../services/api';
 
 export default function Register() {
   const navigate = useNavigate();
@@ -16,6 +17,7 @@ export default function Register() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const discordAuthUrl = resolveAuthUrl('/api/auth/discord');
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -195,7 +197,7 @@ export default function Register() {
               </div>
 
               <a
-                href={`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/auth/discord`}
+                href={discordAuthUrl}
                 className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-lg font-semibold transition-all duration-200 hover:shadow-lg hover:shadow-indigo-500/50 flex items-center justify-center gap-2"
               >
                 <FaDiscord className="text-xl" />

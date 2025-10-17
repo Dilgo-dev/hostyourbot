@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { authService, type User } from '../services/authService';
+import { authApi } from '../services/api';
 
 interface AuthContextType {
   user: User | null;
@@ -132,28 +133,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setError(null);
       setLoading(true);
 
-      const response = await fetch('http://localhost:3001/api/auth/2fa/verify', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          tempToken,
-          code,
-        }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Code de vérification invalide');
-      }
-
-      const data = await response.json();
-      setUser(data.user);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      const response = await authApi.post('/api/auth/2fa/verify', { tempToken, code });
+      setUser(response.data.user);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
     } catch (err: any) {
-      const message = err.message || 'Verification failed';
+      const message = err?.response?.data?.error || err.message || 'Verification failed';
       setError(message);
       throw new Error(message);
     } finally {

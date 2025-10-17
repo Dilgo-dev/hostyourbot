@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FaLock, FaCheckCircle, FaArrowLeft } from 'react-icons/fa';
+import { authApi } from '../services/api';
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
@@ -42,25 +43,14 @@ export default function ResetPassword() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('http://localhost:3001/api/auth/reset-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ token, newPassword }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to reset password');
-      }
-
+      await authApi.post('/api/auth/reset-password', { token, newPassword });
       setResetSuccess(true);
       setTimeout(() => {
         navigate('/login');
       }, 3000);
-    } catch (err) {
-      setError((err as Error).message || 'Une erreur est survenue. Veuillez réessayer.');
+    } catch (err: any) {
+      const apiMessage = err?.response?.data?.error;
+      setError(apiMessage || err.message || 'Une erreur est survenue. Veuillez réessayer.');
     } finally {
       setIsSubmitting(false);
     }

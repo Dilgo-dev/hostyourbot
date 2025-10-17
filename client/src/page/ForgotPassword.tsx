@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FaEnvelope, FaCheckCircle, FaArrowLeft } from 'react-icons/fa';
+import { authApi } from '../services/api';
 
 export default function ForgotPassword() {
   const [searchParams] = useSearchParams();
@@ -30,22 +31,11 @@ export default function ForgotPassword() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('http://localhost:3001/api/auth/forgot-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to send reset email');
-      }
-
+      await authApi.post('/api/auth/forgot-password', { email });
       setEmailSent(true);
-    } catch (err) {
-      setError("Une erreur est survenue. Veuillez réessayer.");
+    } catch (err: any) {
+      const apiMessage = err?.response?.data?.error;
+      setError(apiMessage || "Une erreur est survenue. Veuillez réessayer.");
     } finally {
       setIsSubmitting(false);
     }

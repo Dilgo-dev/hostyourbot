@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaDiscord } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
+import { resolveAuthUrl } from '../services/api';
 import TwoFactorVerify from '../component/auth/TwoFactorVerify';
 
 export default function Login() {
@@ -17,6 +18,7 @@ export default function Login() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [show2FA, setShow2FA] = useState(false);
   const [tempToken, setTempToken] = useState<string>('');
+  const discordAuthUrl = resolveAuthUrl('/api/auth/discord');
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -189,7 +191,7 @@ export default function Login() {
               </div>
 
               <a
-                href={`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/auth/discord`}
+                href={discordAuthUrl}
                 className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-lg font-semibold transition-all duration-200 hover:shadow-lg hover:shadow-indigo-500/50 flex items-center justify-center gap-2"
               >
                 <FaDiscord className="text-xl" />

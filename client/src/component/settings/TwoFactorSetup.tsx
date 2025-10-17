@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaQrcode, FaCheck, FaTimes } from 'react-icons/fa';
+import { authApi } from '../../services/api';
 
 interface TwoFactorSetupProps {
   isOpen: boolean;
@@ -21,21 +22,13 @@ export default function TwoFactorSetup({ isOpen, onClose, onSuccess }: TwoFactor
     setError(null);
 
     try {
-      const response = await fetch('http://localhost:3001/api/auth/2fa/generate', {
-        method: 'POST',
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        throw new Error('Erreur lors de la génération du secret');
-      }
-
-      const data = await response.json();
-      setQrCodeUrl(data.qrCodeUrl);
-      setSecret(data.secret);
+      const response = await authApi.post('/api/auth/2fa/generate');
+      setQrCodeUrl(response.data.qrCodeUrl);
+      setSecret(response.data.secret);
       setStep('verify');
     } catch (err: any) {
-      setError(err.message || 'Une erreur est survenue');
+      const apiMessage = err?.response?.data?.error;
+      setError(apiMessage || err.message || 'Une erreur est survenue');
     } finally {
       setLoading(false);
     }
@@ -51,24 +44,12 @@ export default function TwoFactorSetup({ isOpen, onClose, onSuccess }: TwoFactor
     setError(null);
 
     try {
-      const response = await fetch('http://localhost:3001/api/auth/2fa/enable', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ token: verificationCode }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Code de vérification invalide');
-      }
-
+      await authApi.post('/api/auth/2fa/enable', { token: verificationCode });
       onSuccess();
       handleClose();
     } catch (err: any) {
-      setError(err.message || 'Une erreur est survenue');
+      const apiMessage = err?.response?.data?.error;
+      setError(apiMessage || err.message || 'Une erreur est survenue');
     } finally {
       setLoading(false);
     }
