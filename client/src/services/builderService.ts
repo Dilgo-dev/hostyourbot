@@ -59,7 +59,7 @@ class BuilderService {
     const response = await builderApi.get('/api/workflows', {
       params: { userId },
     });
-    return response.data.workflows;
+    return response.data.workflows || [];
   }
 
   async getWorkflow(id: string, userId: string): Promise<Workflow> {
