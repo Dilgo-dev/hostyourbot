@@ -57,18 +57,30 @@ app.get('/health', (req: Request, res: Response) => {
   res.status(200).json({ status: 'ok', service: 'auth-service' });
 });
 
-AppDataSource.initialize()
-  .then(() => {
-    console.log('Database connected successfully');
+const connectWithRetry = async (retries = 10, delay = 5000): Promise<void> => {
+  for (let i = 0; i < retries; i++) {
+    try {
+      await AppDataSource.initialize();
+      console.log('Database connected successfully');
 
-    initLogsGrpcClient();
-    initMailGrpcClient();
+      initLogsGrpcClient();
+      initMailGrpcClient();
 
-    app.listen(PORT, () => {
-      console.log(`Auth service running on port ${PORT}`);
-    });
-  })
-  .catch((error) => {
-    console.error('Database connection error:', error);
-    process.exit(1);
-  });
+      app.listen(PORT, () => {
+        console.log(`Auth service running on port ${PORT}`);
+      });
+      return;
+    } catch (error) {
+      console.error(`Database connection attempt ${i + 1}/${retries} failed:`, error);
+      if (i < retries - 1) {
+        console.log(`Retrying in ${delay / 1000} seconds...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      } else {
+        console.error('Max retries reached. Exiting...');
+        process.exit(1);
+      }
+    }
+  }
+};
+
+connectWithRetry();
