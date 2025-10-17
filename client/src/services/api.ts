@@ -28,13 +28,29 @@ const resolveUrl = (base: string, path: string) => {
   }
 };
 
+const resolveDefaultUrl = (path: string, fallback: string) => {
+  if (!import.meta.env.DEV && typeof window !== 'undefined') {
+    return resolveUrl(window.location.origin, path);
+  }
+  return fallback;
+};
+
 const authConfig = createApiConfig(
   import.meta.env.VITE_AUTH_API_URL ?? import.meta.env.VITE_API_URL,
-  'http://localhost:3001'
+  resolveDefaultUrl('/api/auth', 'http://localhost:3001')
 );
-const k8sConfig = createApiConfig(import.meta.env.VITE_K8S_API_URL, 'http://localhost:3003');
-const logsConfig = createApiConfig(import.meta.env.VITE_LOGS_API_URL, 'http://localhost:3002');
-const builderConfig = createApiConfig(import.meta.env.VITE_BUILDER_API_URL, 'http://localhost:3004');
+const k8sConfig = createApiConfig(
+  import.meta.env.VITE_K8S_API_URL,
+  resolveDefaultUrl('/api/k8s', 'http://localhost:3003')
+);
+const logsConfig = createApiConfig(
+  import.meta.env.VITE_LOGS_API_URL,
+  resolveDefaultUrl('/api/logs', 'http://localhost:3002')
+);
+const builderConfig = createApiConfig(
+  import.meta.env.VITE_BUILDER_API_URL,
+  resolveDefaultUrl('/api/builder', 'http://localhost:3004')
+);
 
 export const resolveAuthUrl = (path: string) => resolveUrl(authConfig.raw, path);
 export const resolveK8sUrl = (path: string) => resolveUrl(k8sConfig.raw, path);
