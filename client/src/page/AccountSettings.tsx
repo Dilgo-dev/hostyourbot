@@ -7,6 +7,7 @@ import DashboardLayout from '../component/dashboard/DashboardLayout';
 import DeleteAccountModal from '../component/settings/DeleteAccountModal';
 import TwoFactorSetup from '../component/settings/TwoFactorSetup';
 import { accountService } from '../services/accountService';
+import { authApi } from '../services/api';
 
 export default function AccountSettings() {
   const { user, logout, refreshUser } = useAuth();
@@ -24,21 +25,11 @@ export default function AccountSettings() {
 
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:3001/api/auth/forgot-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email: user?.email }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Erreur lors de l\'envoi de l\'email');
-      }
-
+      await authApi.post('/api/auth/forgot-password', { email: user?.email });
       setMessage({ type: 'success', text: 'Email de réinitialisation envoyé avec succès' });
     } catch (error: any) {
-      setMessage({ type: 'error', text: 'Erreur lors de l\'envoi de l\'email de réinitialisation' });
+      const apiMessage = error?.response?.data?.error;
+      setMessage({ type: 'error', text: apiMessage || 'Erreur lors de l\'envoi de l\'email de réinitialisation' });
     } finally {
       setLoading(false);
     }
@@ -76,24 +67,12 @@ export default function AccountSettings() {
     setMessage(null);
 
     try {
-      const response = await fetch('http://localhost:3001/api/auth/2fa/disable', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ password }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Erreur lors de la désactivation');
-      }
-
+      await authApi.post('/api/auth/2fa/disable', { password });
       setMessage({ type: 'success', text: 'Double authentification désactivée avec succès' });
       await refreshUser();
     } catch (error: any) {
-      setMessage({ type: 'error', text: error.message || 'Erreur lors de la désactivation de la 2FA' });
+      const apiMessage = error?.response?.data?.error;
+      setMessage({ type: 'error', text: apiMessage || error.message || 'Erreur lors de la désactivation de la 2FA' });
     } finally {
       setDisabling2FA(false);
     }

@@ -1,12 +1,48 @@
 import axios from 'axios';
 
-const AUTH_API_URL = import.meta.env.VITE_AUTH_API_URL || 'http://localhost:3001';
-const K8S_API_URL = import.meta.env.VITE_K8S_API_URL || 'http://localhost:3003';
-const LOGS_API_URL = import.meta.env.VITE_LOGS_API_URL || 'http://localhost:3002';
-const BUILDER_API_URL = import.meta.env.VITE_BUILDER_API_URL || 'http://localhost:3004';
+type ApiConfig = {
+  raw: string;
+  origin: string;
+};
+
+const trimTrailingSlash = (value: string) => value.replace(/\/+$/, '');
+
+const createApiConfig = (value: string | undefined, fallback: string): ApiConfig => {
+  const rawValue = value && value.trim().length > 0 ? value.trim() : fallback;
+  const normalized = trimTrailingSlash(rawValue);
+  try {
+    const parsed = new URL(normalized);
+    return { raw: normalized, origin: parsed.origin };
+  } catch {
+    return { raw: normalized, origin: normalized };
+  }
+};
+
+const resolveUrl = (base: string, path: string) => {
+  try {
+    return new URL(path, base).toString();
+  } catch {
+    const normalizedBase = trimTrailingSlash(base);
+    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+    return `${normalizedBase}${normalizedPath}`;
+  }
+};
+
+const authConfig = createApiConfig(
+  import.meta.env.VITE_AUTH_API_URL ?? import.meta.env.VITE_API_URL,
+  'http://localhost:3001'
+);
+const k8sConfig = createApiConfig(import.meta.env.VITE_K8S_API_URL, 'http://localhost:3003');
+const logsConfig = createApiConfig(import.meta.env.VITE_LOGS_API_URL, 'http://localhost:3002');
+const builderConfig = createApiConfig(import.meta.env.VITE_BUILDER_API_URL, 'http://localhost:3004');
+
+export const resolveAuthUrl = (path: string) => resolveUrl(authConfig.raw, path);
+export const resolveK8sUrl = (path: string) => resolveUrl(k8sConfig.raw, path);
+export const resolveLogsUrl = (path: string) => resolveUrl(logsConfig.raw, path);
+export const resolveBuilderUrl = (path: string) => resolveUrl(builderConfig.raw, path);
 
 export const authApi = axios.create({
-  baseURL: AUTH_API_URL,
+  baseURL: authConfig.origin,
   timeout: 30000,
   withCredentials: true,
   headers: {
@@ -15,7 +51,7 @@ export const authApi = axios.create({
 });
 
 export const k8sApi = axios.create({
-  baseURL: K8S_API_URL,
+  baseURL: k8sConfig.origin,
   timeout: 30000,
   withCredentials: true,
   headers: {
@@ -24,7 +60,7 @@ export const k8sApi = axios.create({
 });
 
 export const logsApi = axios.create({
-  baseURL: LOGS_API_URL,
+  baseURL: logsConfig.origin,
   timeout: 30000,
   withCredentials: true,
   headers: {
@@ -33,7 +69,7 @@ export const logsApi = axios.create({
 });
 
 export const builderApi = axios.create({
-  baseURL: BUILDER_API_URL,
+  baseURL: builderConfig.origin,
   timeout: 30000,
   withCredentials: true,
   headers: {
